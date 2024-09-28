@@ -1,0 +1,4 @@
+Name: cflags-abc
+Version: 1.2.3
+Description: This demonstrates basic cflags can be accessed
+Cflags: -a -b -c
