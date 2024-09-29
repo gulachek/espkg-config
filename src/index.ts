@@ -1,1 +1,1 @@
-export { PkgConfig } from "./PkgConfig.js";
+export { PkgConfig } from "./PkgConfig";

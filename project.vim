@@ -4,4 +4,4 @@ set path=,,src/**,test/**
 nnoremap <Leader>b :!npx tsc<CR>
 
 " test
-nnoremap <Leader>t :!npx mocha dist/spec<CR>
+nnoremap <Leader>t :!npm run test<CR>

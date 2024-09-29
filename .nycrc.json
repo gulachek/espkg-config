@@ -1,0 +1,14 @@
+{
+	"extension": [".ts"],
+	"all": true,
+	"include": ["**"],
+	"exclude": [
+		".",
+		"coverage",
+		"types",
+		"src/**/*.d.ts",
+		"src/spec/*.ts",
+		"src/example/**"
+	],
+	"reporter": ["html"]
+}

@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { resolve, sep } from "node:path";
 import { SpawnOptions, spawn } from "node:child_process";
 import { Readable } from "node:stream";
-import { PkgConfig } from "../index.js";
+import { PkgConfig } from "../index";
 
 describe("pkg-config", () => {
   let exe: PkgExe;

@@ -1,6 +1,7 @@
 {
   "include": ["src/**/*.ts"],
   "compilerOptions": {
+    "rootDir": "src",
     "target": "es6",
     "lib": ["es2021"],
     "module": "node16",
