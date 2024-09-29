@@ -5,7 +5,8 @@
   "type": "commonjs",
   "exports": "./dist/index.js",
   "scripts": {
-    "test": "nyc mocha"
+    "test": "mocha",
+    "coverage": "nyc mocha"
   },
   "author": "Nicholas Gulachek",
   "license": "GPL-3.0-or-later",
