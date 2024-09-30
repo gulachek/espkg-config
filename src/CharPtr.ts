@@ -20,13 +20,21 @@ export class CharPtr {
   public setChar(c: string): void {
     if (c.length !== 1) {
       throw new Error(
-        "Expected setChar to have argument of string of length 1"
+        `Expected setChar to have argument of string of length 1 (given "${c}")`
       );
     }
 
-    if (this.i < 0 || this.i >= this.chars.length) {
-      throw new Error("setChar setting out of bounds");
+    if (this.i < 0 || this.i > this.chars.length) {
+      throw new Error(`setChar setting out of bounds (given '${c}')`);
     }
+
+    if (this.i === this.chars.length && c !== "\0") {
+      throw new Error(
+        `setChar setting non-null character '${c}' in place of null-terminator`
+      );
+    }
+
+    this.chars[this.i] = c;
   }
 
   public copyFrom(other: CharPtr): void {

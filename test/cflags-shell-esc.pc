@@ -1,4 +1,8 @@
 Name: cflags-shell-esc
 Version: 1.2.3
 Description: This demonstrates cflags that are escaped by pkg-config
-Cflags: -a\ b -idirafter hello\#world
+Cflags: -a\ b hello\#world --line\
+-feed --carriage\-return --cr\
+lf --lf\
+cr \
+'--single quote\' "--double \"quote" "--escape\ space"

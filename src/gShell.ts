@@ -114,7 +114,7 @@ function tokenizeCommandLine(cmdLine: string): GParseArgvResult {
     return result;
   }
 
-  if (result.argv.length < 0) {
+  if (result.argv.length < 1) {
     result.error = `Text was empty (or contained only whitespace)`;
     return result;
   }
@@ -199,7 +199,7 @@ function unquoteStringInplace(str: CharPtr, end: CharPtr): string {
         default:
           dest.setChar(s.deref());
           dest.advance();
-          dest.advance();
+          s.advance();
           break;
       }
     }
@@ -213,7 +213,7 @@ function unquoteStringInplace(str: CharPtr, end: CharPtr): string {
       } else {
         dest.setChar(s.deref());
         dest.advance();
-        dest.advance();
+        s.advance();
       }
     }
   }
