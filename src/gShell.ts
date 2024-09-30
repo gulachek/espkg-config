@@ -38,7 +38,6 @@ function tokenizeCommandLine(cmdLine: string): GParseArgvResult {
   while (p.deref()) {
     if (currentQuote === "\\") {
       if (p.deref() !== "\n") {
-        currentToken.ensure();
         currentToken.append("\\" + p.deref());
       }
 
@@ -54,7 +53,6 @@ function tokenizeCommandLine(cmdLine: string): GParseArgvResult {
         currentQuote = "";
       }
 
-      currentToken.ensure();
       currentToken.append(p.deref());
     } else {
       switch (p.deref()) {
@@ -68,7 +66,6 @@ function tokenizeCommandLine(cmdLine: string): GParseArgvResult {
           break;
         case "'":
         case '"':
-          currentToken.ensure();
           currentToken.append(p.deref());
         case "\\":
           currentQuote = p.deref();
@@ -85,13 +82,11 @@ function tokenizeCommandLine(cmdLine: string): GParseArgvResult {
               currentQuote = p.deref();
               break;
             default:
-              currentToken.ensure();
               currentToken.append(p.deref());
               break;
           }
           break;
         default:
-          currentToken.ensure();
           currentToken.append(p.deref());
           break;
       }
@@ -227,10 +222,6 @@ class Token {
   private str = "";
   private _exists = false;
 
-  public ensure(): void {
-    this._exists = true;
-  }
-
   public delimit(retval: string[]): void {
     if (!this._exists) return;
 
@@ -241,7 +232,7 @@ class Token {
   }
 
   public append(s: string): void {
-    if (!this._exists) throw new Error("Token hasn't been allocated");
+    this._exists = true; // ensure_token
     this.str += s;
   }
 
