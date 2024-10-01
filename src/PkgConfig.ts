@@ -241,7 +241,10 @@ class Package {
   }
 
   private parseCflags(str: string, path: string): void {
-    // TODO error if already defined cflags
+    if (this.cflags.length > 0) {
+      throw new Error(`Cflags field occurs more than once in '${path}'`);
+    }
+
     const trimmed = this.trimAndSub(str, path);
 
     const { error, argv } = gShellParseArgv(trimmed);

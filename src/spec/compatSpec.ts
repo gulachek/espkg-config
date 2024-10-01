@@ -36,20 +36,19 @@ describe("pkg-config", () => {
   describe("cflags", () => {
     async function expectFailure(
       names: string[],
-      msgs: {
-        ref: RegExp;
-        self: RegExp;
-      }
+      msgs: ErrorMatch
     ): Promise<void> {
       let exeFail = true,
         pkgFail = true;
+
+      const { ref, self } = errMatchers(msgs);
 
       try {
         await exe.cflags(names);
         exeFail = false;
       } catch (ex) {
         expect(ex.message).to.match(
-          msgs.ref,
+          ref,
           `Reference pkg-config behavior did not exit with expected error. Text:\n${ex.message}`
         );
       }
@@ -59,7 +58,7 @@ describe("pkg-config", () => {
         pkgFail = false;
       } catch (ex) {
         expect(ex.message).to.match(
-          msgs.self,
+          self,
           `PkgConfig implementation did not throw expected error. Text:\n${ex.message}`
         );
       }
@@ -108,6 +107,17 @@ describe("pkg-config", () => {
         ref: /Couldn't parse Cflags[a-z ]+: Text ended just after a “\\”/,
         self: /Couldn't parse Cflags[a-z ]+: Text ended just after a '\\'/,
       });
+    });
+
+    it("fails if multiple CFlags fields are present", async () => {
+      await expectFailure(
+        ["bad-multi-cflags"],
+        /Cflags field occurs (\w+ )+in '.+bad-multi-cflags.pc'/
+      );
+    });
+
+    it("ok if multiple leading cflags fields are defined and empty", async () => {
+      await expectCflags(["cflags-multi-empty-ok"], ["--nonempty"]);
     });
 
     // TODO is this breaking change? Is it ok to not go through shell eval? Expansion etc
@@ -267,4 +277,25 @@ async function shellSplitWords(words: string): Promise<string[]> {
     `node -e '${script}' -- ${words}`,
   ]);
   return JSON.parse(jsonWords) as string[];
+}
+
+interface ErrorMatchObj {
+  ref: RegExp;
+  self: RegExp;
+}
+
+type ErrorMatch = RegExp | ErrorMatchObj;
+
+function isErrMatchObj(obj: unknown): obj is ErrorMatchObj {
+  return (
+    typeof obj === "object" &&
+    obj.hasOwnProperty("self") &&
+    obj.hasOwnProperty("ref")
+  );
+}
+
+function errMatchers(match: ErrorMatch): ErrorMatchObj {
+  if (isErrMatchObj(match)) return match;
+
+  return { ref: match, self: match };
 }

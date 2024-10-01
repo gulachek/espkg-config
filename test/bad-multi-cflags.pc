@@ -1,0 +1,5 @@
+Name: bad-multi-cflags
+Version: 1.2.3
+Description: This demonstrates you can't have 2 Cflags
+Cflags: -a -b -c   
+CFlags: -d -e -f

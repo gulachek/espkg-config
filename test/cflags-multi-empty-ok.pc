@@ -1,0 +1,5 @@
+Name: cflags-multi-empty-ok
+Version: 1.2.3
+Description: This demonstrates you can have an empty Cflags field ahead of a non-empty one
+Cflags: 
+Cflags: --nonempty
