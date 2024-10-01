@@ -38,6 +38,10 @@ describe("pkg-config", () => {
       await expectCflags(["cflags-abc"], ["-a", "-b", "-c"]);
     });
 
+    it("finds a module identified by filename", async () => {
+      await expectCflags(["test/cflags-abc.pc"], ["-a", "-b", "-c"]);
+    });
+
     // TODO is this breaking change? Is it ok to not go through shell eval? Expansion etc
     it("handles many escape chars in pkg file", async () => {
       await expectCflags(
@@ -54,6 +58,56 @@ describe("pkg-config", () => {
           "--escape\\ space",
         ]
       );
+    });
+
+    it("does not repeat flags for a repeated module", async () => {
+      await expectCflags(["cflags-abc", "cflags-abc"], ["-a", "-b", "-c"]);
+    });
+
+    /**
+     * Confusing behavior:
+     *
+     * Internally, pkg-config seems to attempt to avoid duplicative parsing
+     * by keeping a hash table of key -> pkg mappings. The key ends up being
+     * the specified module name (like 'module') or the basename of an
+     * explicit file (like 'module' in '/dir/module.pc'). There seems to be
+     * odd behavior where the raw given name is looked up prior to computing
+     * the basename though, meaning that a filename will never end up in the
+     * hash table keys, but it will override whatever was previously there.
+     *
+     * pkg-config also then combines all modules together in reverse order,
+     * deduplicating by key, so the last loaded module with the key wins.
+     *
+     * Practically this seems to mean that the last filename wins
+     */
+    describe("prefers the last specified filename", () => {
+      it("with filename second", async () => {
+        await expectCflags(
+          ["overloaded", "test/subdir/overloaded.pc"],
+          ["--subdir-flags"]
+        );
+      });
+
+      it("with filename first", async () => {
+        await expectCflags(
+          ["test/subdir/overloaded.pc", "overloaded"],
+          ["--subdir-flags"]
+        );
+      });
+
+      it("with two filenames one way", async () => {
+        await expectCflags(
+          ["test/subdir/overloaded.pc", "test/overloaded.pc"],
+          ["--default-flags"]
+        );
+      });
+
+      it("with two filenames the other way", async () => {
+        await expectCflags(
+          ["test/overloaded.pc", "test/subdir/overloaded.pc"],
+          ["--subdir-flags"]
+        );
+      });
     });
   });
 });

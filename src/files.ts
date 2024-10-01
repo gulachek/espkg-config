@@ -10,20 +10,22 @@ export class FileStream {
     this.contents = "";
   }
 
-  async load(): Promise<void> {
+  public async load(): Promise<void> {
     if (!this.contents) {
       this.contents = await readFile(this.path, "utf8");
     }
   }
 
-  getc(): string {
-    if (this.pos < this.contents.length)
-      return this.contents.charAt(this.pos++);
+  public eof(): boolean {
+    return this.pos >= this.contents.length;
+  }
 
+  public getc(): string {
+    if (!this.eof()) return this.contents.charAt(this.pos++);
     return "";
   }
 
-  ungetc(char: string): void {
+  public ungetc(char: string): void {
     if (char !== this.contents.charAt(--this.pos)) {
       /* 1 based character pos in most editors for err msg */
       throw new Error(

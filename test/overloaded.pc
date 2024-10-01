@@ -1,0 +1,6 @@
+Name: overloaded
+Version: 1.2.3
+Description: This has a copy in \$GITDIR/test/overloaded.pc and \
+$GITDIR/test/subdir/overloaded.pc with different flags.
+
+Cflags: --default-flags

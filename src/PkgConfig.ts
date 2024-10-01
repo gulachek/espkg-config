@@ -139,6 +139,8 @@ export class PkgConfig {
 
     if (!pkg) return null;
 
+    this.packages.set(key, pkg);
+
     if (location.includes("uninstalled.pc")) pkg.uninstalled = true;
 
     // todo requires / requires.private
@@ -161,12 +163,12 @@ export class PkgConfig {
 
     const file = new FileStream(path);
     await file.load();
-    while (true) {
+    while (!file.eof()) {
       const line = await readOneLine(file);
-      if (!line) return pkg;
-
       pkg.parseLine(line, path);
     }
+
+    return pkg;
   }
 }
 
