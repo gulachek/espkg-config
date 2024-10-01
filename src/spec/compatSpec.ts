@@ -91,6 +91,10 @@ describe("pkg-config", () => {
       await expectCflags(["cflags-comment"], ["--no-comment"]);
     });
 
+    it("accepts CFlags as well (normally Cflags)", async () => {
+      await expectCflags(["cflags-capital-f"], ["CFlags"]);
+    });
+
     it("looks up a <module>-uninstalled variant and reads its cflags", async () => {
       await expectCflags(["removed"], ["--i-am-uninstalled"]);
     });

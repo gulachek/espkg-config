@@ -1,0 +1,4 @@
+Name: cflags-capital-f
+Version: 1.2.3
+Description: This demonstrates that CFlags is ok too
+CFlags: CFlags # :)
