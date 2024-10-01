@@ -269,7 +269,7 @@ class Package {
 
 			const includeMatch = arg.match(/^-I\s*(.*)$/);
 			if (includeMatch) {
-				const flag = new Flag(FlagType.CFLAGS_I, [includeMatch[1]]);
+				const flag = new Flag(FlagType.CFLAGS_I, [arg]);
 				this.cflags.push(flag);
 			} else if (
 				(arg === '-idirafter' || arg === '-isystem') &&

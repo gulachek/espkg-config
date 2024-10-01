@@ -1,0 +1,4 @@
+Name: cflags-i-other
+Version: 1.2.3
+Description: This has CFLAGS_I before CFLAGS_OTHER
+Cflags: "-I  include/dir" -isystem isystem/option -idirafter idirafter/option --other

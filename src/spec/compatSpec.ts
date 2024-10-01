@@ -78,6 +78,39 @@ describe('pkg-config', () => {
 			await expectCflags(['cflags-abc'], ['-a', '-b', '-c']);
 		});
 
+		it('sorts "include" flags after "other" flags', async () => {
+			await expectCflags(
+				['cflags-i-other'],
+				[
+					'--other', // this was the last option in the file
+					'-I  include/dir',
+					'-isystem',
+					'isystem/option',
+					'-idirafter',
+					'idirafter/option',
+				],
+			);
+		});
+
+		it('deduplicates consecutive identical flags after sorting "include"/"other"', async () => {
+			await expectCflags(
+				['cflags-i-other', 'cflags-other-i'],
+				[
+					'--other',
+					'-I  include/dir',
+					'-isystem',
+					'isystem/option',
+					'-idirafter',
+					'idirafter/option',
+					'-I include/dir',
+					'-isystem',
+					'isystem/option',
+					'-idirafter',
+					'idirafter/option',
+				],
+			);
+		});
+
 		it('is an empty array when cflags is empty', async () => {
 			await expectCflags(['cflags-empty'], []);
 		});
