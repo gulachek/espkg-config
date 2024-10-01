@@ -1,25 +1,26 @@
 {
-  "name": "espkg-config",
-  "version": "0.1.0",
-  "description": "Parse pkg-config files in JavaScript",
-  "type": "commonjs",
-  "exports": "./dist/index.js",
-  "scripts": {
-    "test": "mocha",
-    "coverage": "nyc mocha"
-  },
-  "author": "Nicholas Gulachek",
-  "license": "GPL-3.0-or-later",
-  "devDependencies": {
-    "@istanbuljs/nyc-config-typescript": "^1.0.2",
-    "@types/chai": "^4.3.20",
-    "@types/mocha": "^10.0.8",
-    "@types/node": "^22.7.0",
-    "chai": "^4.5.0",
-    "mocha": "^10.7.3",
-    "nyc": "^17.1.0",
-    "source-map-support": "^0.5.21",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.6.2"
-  }
+	"name": "espkg-config",
+	"version": "0.1.0",
+	"description": "Parse pkg-config files in JavaScript",
+	"type": "commonjs",
+	"exports": "./dist/index.js",
+	"scripts": {
+		"test": "mocha",
+		"coverage": "nyc mocha"
+	},
+	"author": "Nicholas Gulachek",
+	"license": "GPL-3.0-or-later",
+	"devDependencies": {
+		"@istanbuljs/nyc-config-typescript": "^1.0.2",
+		"@types/chai": "^4.3.20",
+		"@types/mocha": "^10.0.8",
+		"@types/node": "^22.7.0",
+		"chai": "^4.5.0",
+		"mocha": "^10.7.3",
+		"nyc": "^17.1.0",
+		"prettier": "^3.3.3",
+		"source-map-support": "^0.5.21",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.6.2"
+	}
 }
