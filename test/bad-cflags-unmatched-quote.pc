@@ -1,0 +1,4 @@
+Name: bad-cflags-unmatched-quote
+Version: 1.2.3
+Description: This shows what happens when cflags has unmatched quotes
+Cflags: --hello --unmatched '--quote

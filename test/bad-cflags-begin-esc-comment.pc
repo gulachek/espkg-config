@@ -1,0 +1,4 @@
+Name: cflags-begin-esc-comment
+Version: 1.2.3
+Description: This shows what happens when cflags begins with \#
+Cflags: \# --some --flags

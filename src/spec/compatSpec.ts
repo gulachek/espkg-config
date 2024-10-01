@@ -137,6 +137,24 @@ describe('pkg-config', () => {
 			await expectCflags(['cflags-comment'], ['--no-comment']);
 		});
 
+		it('fails if the first character in cflags is escaped #', async () => {
+			await expectFailure(
+				['bad-cflags-begin-esc-comment'],
+				/Couldn't parse Cflags[a-z ]+: Text was empty/,
+			);
+		});
+
+		it('has empty cflags if it begins with \\<space>\\#', async () => {
+			await expectCflags(['cflags-begin-esc-space-comment'], []);
+		});
+
+		it('fails if it has unmatched quotes', async () => {
+			await expectFailure(
+				['bad-cflags-unmatched-quote'],
+				/Couldn't parse Cflags[a-z ]+: Text ended before matching quote/,
+			);
+		});
+
 		it('accepts CFlags as well (normally Cflags)', async () => {
 			await expectCflags(['cflags-capital-f'], ['CFlags']);
 		});
