@@ -1,0 +1,6 @@
+Name: cflags-lingering-backslash
+Version: 1.2.3
+Description: This contains a lingering backslash as \
+the last byte of the file
+
+Cflags: --lingering-backslash \

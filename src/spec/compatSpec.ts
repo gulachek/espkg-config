@@ -34,6 +34,47 @@ describe("pkg-config", () => {
   }
 
   describe("cflags", () => {
+    async function expectFailure(
+      names: string[],
+      msgs: {
+        ref: RegExp;
+        self: RegExp;
+      }
+    ): Promise<void> {
+      let exeFail = true,
+        pkgFail = true;
+
+      try {
+        await exe.cflags(names);
+        exeFail = false;
+      } catch (ex) {
+        expect(ex.message).to.match(
+          msgs.ref,
+          `Reference pkg-config behavior did not exit with expected error. Text:\n${ex.message}`
+        );
+      }
+
+      try {
+        await pkg.cflags(names);
+        pkgFail = false;
+      } catch (ex) {
+        expect(ex.message).to.match(
+          msgs.self,
+          `PkgConfig implementation did not throw expected error. Text:\n${ex.message}`
+        );
+      }
+
+      expect(
+        exeFail,
+        "Expected reference pkg-config behavior to exit with an error, but it exited successfully."
+      ).to.be.true;
+
+      expect(
+        pkgFail,
+        "Expected PkgConfig implementation to throw, but returned successfully."
+      ).to.be.true;
+    }
+
     it("gets basic flags from pc file", async () => {
       await expectCflags(["cflags-abc"], ["-a", "-b", "-c"]);
     });
@@ -48,6 +89,13 @@ describe("pkg-config", () => {
 
     it("looks up a <module>-uninstalled variant and reads its cflags", async () => {
       await expectCflags(["removed"], ["--i-am-uninstalled"]);
+    });
+
+    it("fails if Cflags ends with backslash as last byte of file", async () => {
+      await expectFailure(["cflags-lingering-backslash"], {
+        ref: /Couldn't parse Cflags[a-z ]+: Text ended just after a “\\”/,
+        self: /Couldn't parse Cflags[a-z ]+: Text ended just after a '\\'/,
+      });
     });
 
     // TODO is this breaking change? Is it ok to not go through shell eval? Expansion etc

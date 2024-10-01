@@ -245,9 +245,10 @@ class Package {
     const trimmed = this.trimAndSub(str, path);
 
     const { error, argv } = gShellParseArgv(trimmed);
-    if (error) {
-      // TODO handle error
-      throw new Error(error);
+    if (trimmed && error) {
+      throw new Error(
+        `Couldn't parse Cflags field into an argument vector: ${error}`
+      );
     }
 
     let i = 0;

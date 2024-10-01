@@ -32,7 +32,7 @@ function tokenizeCommandLine(cmdLine: string): GParseArgvResult {
     argv: [],
   };
 
-  let retval: string[] = result.argv;
+  let retval: string[] = [];
   const p = new CharPtr(cmdLine);
 
   while (p.deref()) {
@@ -109,11 +109,12 @@ function tokenizeCommandLine(cmdLine: string): GParseArgvResult {
     return result;
   }
 
-  if (result.argv.length < 1) {
+  if (retval.length < 1) {
     result.error = `Text was empty (or contained only whitespace)`;
     return result;
   }
 
+  result.argv = retval;
   return result;
 }
 
