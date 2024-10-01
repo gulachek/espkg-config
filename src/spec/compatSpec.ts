@@ -42,6 +42,10 @@ describe("pkg-config", () => {
       await expectCflags(["test/cflags-abc.pc"], ["-a", "-b", "-c"]);
     });
 
+    it("strips comments from flags", async () => {
+      await expectCflags(["cflags-comment"], ["--no-comment"]);
+    });
+
     // TODO is this breaking change? Is it ok to not go through shell eval? Expansion etc
     it("handles many escape chars in pkg file", async () => {
       await expectCflags(

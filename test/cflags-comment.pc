@@ -1,0 +1,4 @@
+Name: cflags-comment
+Version: 1.2.3
+Description: This demonstrates that comments are stripped
+Cflags: --no-comment # This is a comment :)
