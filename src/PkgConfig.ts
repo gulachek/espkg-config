@@ -27,7 +27,7 @@ export class PkgConfig {
     const packages: Package[] = [];
 
     for (const name of moduleList) {
-      const req = await this.getPackage(name);
+      const req = await this.getPackage(name, true);
 
       // TODO version test
       packages.push(req);
@@ -103,7 +103,10 @@ export class PkgConfig {
     expanded.unshift(pkg);
   }
 
-  private async getPackage(name: string): Promise<Package | null> {
+  private async getPackage(
+    name: string,
+    mustExist: boolean
+  ): Promise<Package | null> {
     let pkg: Package | null = this.packages.get(name);
     if (pkg) return pkg;
 
@@ -119,7 +122,7 @@ export class PkgConfig {
       const uninstalled = "-uninstalled";
 
       if (!this.disableUninstalled && !name.endsWith(uninstalled)) {
-        const un = await this.getPackage(name + uninstalled);
+        const un = await this.getPackage(name + uninstalled, false);
 
         if (un) return un;
       }
@@ -133,11 +136,18 @@ export class PkgConfig {
       }
     }
 
-    if (!location) return null;
+    if (!location) {
+      if (mustExist)
+        throw new Error(
+          `Package "${name}" was not found in the PkgConfig searchPath`
+        );
+
+      return null;
+    }
 
     pkg = await this.parsePackageFile(key, location);
 
-    if (!pkg) return null;
+    //if (!pkg) return null;
 
     this.packages.set(key, pkg);
 

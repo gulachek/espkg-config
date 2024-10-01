@@ -120,6 +120,13 @@ describe("pkg-config", () => {
       await expectCflags(["cflags-multi-empty-ok"], ["--nonempty"]);
     });
 
+    it("fails if module doesn't exist", async () => {
+      await expectFailure(["does-not-exist"], {
+        ref: /Package does-not-exist was not found in the pkg-config search path/,
+        self: /Package "does-not-exist" was not found in the PkgConfig searchPath/,
+      });
+    });
+
     // TODO is this breaking change? Is it ok to not go through shell eval? Expansion etc
     it("handles many escape chars in pkg file", async () => {
       await expectCflags(
