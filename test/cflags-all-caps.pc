@@ -1,0 +1,4 @@
+Name: cflags-all-caps
+Version: 1.2.3
+Description: This demonstrates that Cflags is generally case sensitive
+CFLAGS: --all-caps-baby # doesn't show up for --cflags

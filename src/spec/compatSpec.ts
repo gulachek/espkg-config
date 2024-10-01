@@ -95,6 +95,10 @@ describe("pkg-config", () => {
       await expectCflags(["cflags-capital-f"], ["CFlags"]);
     });
 
+    it("is case sensitive for Cflags/CFlags", async () => {
+      await expectCflags(["cflags-all-caps"], []);
+    });
+
     it("looks up a <module>-uninstalled variant and reads its cflags", async () => {
       await expectCflags(["removed"], ["--i-am-uninstalled"]);
     });
