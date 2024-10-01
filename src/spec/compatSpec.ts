@@ -46,6 +46,10 @@ describe("pkg-config", () => {
       await expectCflags(["cflags-comment"], ["--no-comment"]);
     });
 
+    it("looks up a <module>-uninstalled variant and reads its cflags", async () => {
+      await expectCflags(["removed"], ["--i-am-uninstalled"]);
+    });
+
     // TODO is this breaking change? Is it ok to not go through shell eval? Expansion etc
     it("handles many escape chars in pkg file", async () => {
       await expectCflags(

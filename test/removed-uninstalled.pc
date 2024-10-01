@@ -1,0 +1,4 @@
+Name: removed
+Version: 1.2.3
+Description: This has a corresponding pc file that it overrides
+Cflags: --i-am-uninstalled
