@@ -226,7 +226,6 @@ class Package {
           break;
         case "Cflags":
         case "CFlags":
-          // TODO
           this.parseCflags(rest, path);
           break;
         case "Conflicts":
