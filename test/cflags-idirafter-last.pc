@@ -1,0 +1,4 @@
+Name: cflags-idirafter-last
+Version: 1.2.3
+Description: This has -idirafter as the last cflag
+Cflags: --other -Iinclude -idirafter # treated as "CFLAGS_OTHER"

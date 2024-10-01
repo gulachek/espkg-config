@@ -1,0 +1,4 @@
+Name: cflags-isystem-last
+Version: 1.2.3
+Description: This has -isystem as the last cflag
+Cflags: --other -Iinclude -isystem # treated as "CFLAGS_OTHER"

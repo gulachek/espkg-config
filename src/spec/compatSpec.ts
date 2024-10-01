@@ -111,6 +111,20 @@ describe('pkg-config', () => {
 			);
 		});
 
+		it('treats -isystem as "other" if no successive option is given', async () => {
+			await expectCflags(
+				['cflags-isystem-last'],
+				['--other', '-isystem', '-Iinclude'],
+			);
+		});
+
+		it('treats -idirafter as "other" if no successive option is given', async () => {
+			await expectCflags(
+				['cflags-idirafter-last'],
+				['--other', '-idirafter', '-Iinclude'],
+			);
+		});
+
 		it('is an empty array when cflags is empty', async () => {
 			await expectCflags(['cflags-empty'], []);
 		});
