@@ -79,6 +79,10 @@ describe("pkg-config", () => {
       await expectCflags(["cflags-abc"], ["-a", "-b", "-c"]);
     });
 
+    it("is an empty array when cflags is empty", async () => {
+      await expectCflags(["cflags-empty"], []);
+    });
+
     it("finds a module identified by filename", async () => {
       await expectCflags(["test/cflags-abc.pc"], ["-a", "-b", "-c"]);
     });
