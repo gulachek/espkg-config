@@ -21,5 +21,9 @@ pkg-config --libs --static <mod1> <mod2> ...
 
 The `PKG_CONFIG_PATH` search path configuration is supported via `searchPaths`.
 
+This implementation makes no attempt to remove -I flags that might include directories
+known to gcc or msvc (like `CPATH`, `C_INCLUDE_PATH`, etc). This is equivalent to having
+the `PKG_CONFIG_ALLOW_SYSTEM_CFLAGS` environment variable set.
+
 Any other features are not planned to be supported, and issues can be opened to
 request new features.
