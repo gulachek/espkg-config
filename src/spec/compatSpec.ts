@@ -312,6 +312,34 @@ describe('pkg-config', () => {
 				/Package 'bad-no-name' has no Name: field/,
 			);
 		});
+
+		it('fails if package has duplicate version', async () => {
+			await expectFailure(
+				['bad-dup-version'],
+				/Version field occurs [a-z ]+in '.*bad-dup-version.pc'/,
+			);
+		});
+
+		it('fails if package has no version', async () => {
+			await expectFailure(
+				['bad-no-version'],
+				/Package 'bad-no-version' has no Version: field/,
+			);
+		});
+
+		it('fails if package has duplicate description', async () => {
+			await expectFailure(
+				['bad-dup-desc'],
+				/Description field occurs [a-z ]+in '.*bad-dup-desc.pc'/,
+			);
+		});
+
+		it('fails if package has no description', async () => {
+			await expectFailure(
+				['bad-no-desc'],
+				/Package 'bad-no-desc' has no Description: field/,
+			);
+		});
 	});
 });
 

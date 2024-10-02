@@ -194,6 +194,8 @@ class Package {
 	public cflags: Flag[] = [];
 	public pathPosition: number = 0;
 	public name?: string;
+	public version?: string;
+	public description?: string;
 
 	constructor(key: string) {
 		this.key = key;
@@ -202,6 +204,14 @@ class Package {
 	public verify(): void {
 		if (typeof this.name === 'undefined') {
 			throw new Error(`Package '${this.key}' has no Name: field`);
+		}
+
+		if (typeof this.version === 'undefined') {
+			throw new Error(`Package '${this.key}' has no Version: field`);
+		}
+
+		if (typeof this.description === 'undefined') {
+			throw new Error(`Package '${this.key}' has no Description: field`);
 		}
 	}
 
@@ -225,8 +235,21 @@ class Package {
 
 					this.name = this.trimAndSub(rest, path);
 					break;
+				case 'Version':
+					if (typeof this.version === 'string') {
+						throw new Error(`Version field occurs multiple times in '${path}'`);
+					}
+
+					this.version = this.trimAndSub(rest, path);
+					break;
 				case 'Description':
-					// TODO
+					if (typeof this.description === 'string') {
+						throw new Error(
+							`Description field occurs multiple times in '${path}'`,
+						);
+					}
+
+					this.description = this.trimAndSub(rest, path);
 					break;
 				case 'Requires.private':
 					// TODO
