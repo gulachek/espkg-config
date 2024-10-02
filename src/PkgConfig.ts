@@ -61,7 +61,7 @@ export class PkgConfig {
 		}
 
 		if (inPathOrder) {
-			// TODO sort by path position
+			expanded.sort((a, b) => a.pathPosition - b.pathPosition);
 		}
 
 		for (const pkg of expanded) {
@@ -112,6 +112,7 @@ export class PkgConfig {
 
 		let location: string | null = null;
 		let key: string = name;
+		let pathPosition = 0;
 
 		const pc = '.pc';
 		if (name.endsWith(pc)) {
@@ -128,6 +129,7 @@ export class PkgConfig {
 			}
 
 			for (const searchPath of this.searchPaths) {
+				pathPosition++;
 				const path = join(searchPath, name + pc);
 				if (await isRegularFile(path)) {
 					location = path;
@@ -149,6 +151,7 @@ export class PkgConfig {
 
 		//if (!pkg) return null;
 
+		pkg.pathPosition = pathPosition;
 		this.packages.set(key, pkg);
 
 		if (location.includes('uninstalled.pc')) pkg.uninstalled = true;
@@ -188,6 +191,7 @@ class Package {
 	public pcFileDir: string;
 	public vars = new Map<string, string>();
 	public cflags: Flag[] = [];
+	public pathPosition: number = 0;
 
 	constructor(key: string) {
 		this.key = key;

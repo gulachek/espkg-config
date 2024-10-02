@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { resolve, sep } from 'node:path';
+import { resolve, delimiter } from 'node:path';
 import { SpawnOptions, spawn } from 'node:child_process';
 import { Readable } from 'node:stream';
 import { PkgConfig } from '../index';
@@ -9,11 +9,13 @@ describe('pkg-config', () => {
 	let pkg: PkgConfig;
 
 	beforeEach(() => {
+		const dirs = ['test', 'test/d1', 'test/d2'].map((s) => resolve(s));
+
 		exe = new PkgExe();
-		exe.searchPaths.push(resolve('test'));
+		exe.searchPaths.push(...dirs);
 
 		pkg = new PkgConfig({
-			searchPaths: [resolve('test')],
+			searchPaths: dirs,
 		});
 	});
 
@@ -259,6 +261,43 @@ describe('pkg-config', () => {
 				);
 			});
 		});
+
+		it('sorts CFLAGS_I in search path order and CFLAGS_OTHER in given order', async () => {
+			await expectCflags(
+				['mod2', 'mod1'],
+				[
+					'--other2',
+					'--another2',
+					'--other1',
+					'--another1',
+					'-Iinclude/d1',
+					'-isystem',
+					's1',
+					'-Iinclude/d2',
+					'-isystem',
+					's2',
+				],
+			);
+		});
+
+		it('treats direct filename as earlier path order than module resolution', async () => {
+			await expectCflags(
+				['cflags-i-other', 'test/d1/mod1.pc'],
+				[
+					'--other',
+					'--other1',
+					'--another1',
+					'-Iinclude/d1',
+					'-isystem',
+					's1',
+					'-I  include/dir',
+					'-isystem',
+					'isystem/option',
+					'-idirafter',
+					'idirafter/option',
+				],
+			);
+		});
 	});
 });
 
@@ -273,7 +312,7 @@ class PkgExe {
 	private async spawn(args: string[]): Promise<string> {
 		return spawnAsync(this.exe, args, {
 			env: {
-				PKG_CONFIG_PATH: this.searchPaths.join(sep),
+				PKG_CONFIG_PATH: this.searchPaths.join(delimiter),
 			},
 		});
 	}
