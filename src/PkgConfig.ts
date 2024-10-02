@@ -78,8 +78,6 @@ export class PkgConfig {
 			}
 		}
 
-		// TODO handle pcsysrootdir?
-
 		// SKIP flag_list_to_string (we want a parsed array)
 		const out: string[] = [];
 		for (const f of list) {
