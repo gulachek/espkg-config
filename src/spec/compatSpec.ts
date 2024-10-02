@@ -298,6 +298,20 @@ describe('pkg-config', () => {
 				],
 			);
 		});
+
+		it('fails if package has duplicate name', async () => {
+			await expectFailure(
+				['bad-dup-name'],
+				/Name field occurs [a-z ]+in '.*bad-dup-name.pc'/,
+			);
+		});
+
+		it('fails if package has no name', async () => {
+			await expectFailure(
+				['bad-no-name'],
+				/Package 'bad-no-name' has no Name: field/,
+			);
+		});
 	});
 });
 

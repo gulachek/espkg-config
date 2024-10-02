@@ -155,6 +155,9 @@ export class PkgConfig {
 		if (location.includes('uninstalled.pc')) pkg.uninstalled = true;
 
 		// todo requires / requires.private
+
+		pkg.verify();
+
 		return pkg;
 	}
 
@@ -190,9 +193,16 @@ class Package {
 	public vars = new Map<string, string>();
 	public cflags: Flag[] = [];
 	public pathPosition: number = 0;
+	public name?: string;
 
 	constructor(key: string) {
 		this.key = key;
+	}
+
+	public verify(): void {
+		if (typeof this.name === 'undefined') {
+			throw new Error(`Package '${this.key}' has no Name: field`);
+		}
 	}
 
 	public parseLine(untrimmed: string, path: string): void {
@@ -209,7 +219,11 @@ class Package {
 		if (op === ':') {
 			switch (tag) {
 				case 'Name':
-					// TODO
+					if (typeof this.name === 'string') {
+						throw new Error(`Name field occurs multiple times in '${path}'`);
+					}
+
+					this.name = this.trimAndSub(rest, path);
 					break;
 				case 'Description':
 					// TODO
