@@ -1,11 +1,13 @@
 import { join, basename, dirname } from 'node:path';
 import { gShellParseArgv } from './gShell';
 import { FileStream, isRegularFile } from './files';
+import { CharPtr } from './CharPtr';
 
 export class PkgConfig {
 	private searchPaths: string[];
 	private packages: Map<string, Package>;
 	private disableUninstalled = false;
+	private globals = new Map<string, string>();
 
 	/** @todo
 	 * global variables:
@@ -165,7 +167,7 @@ export class PkgConfig {
 		key: string,
 		path: string,
 	): Promise<Package | null> {
-		const pkg = new Package(key);
+		const pkg = new Package(key, this.globals);
 
 		if (path) {
 			pkg.pcFileDir = dirname(path);
@@ -196,9 +198,11 @@ class Package {
 	public name?: string;
 	public version?: string;
 	public description?: string;
+	private globals: Map<string, string>;
 
-	constructor(key: string) {
+	constructor(key: string, globals: Map<string, string>) {
 		this.key = key;
+		this.globals = globals;
 	}
 
 	public verify(): void {
@@ -284,7 +288,7 @@ class Package {
 				throw new Error('Duplicate variable... needs testing');
 			}
 
-			//this.vars.set(tag, this.trimAndSub(rest));
+			this.vars.set(tag, this.trimAndSub(rest, path));
 		}
 	}
 
@@ -327,9 +331,47 @@ class Package {
 		}
 	}
 
-	private trimAndSub(str: string, _path: string): string {
-		// TODO trim and sub
-		return str.trim();
+	private trimAndSub(str: string, path: string): string {
+		const trimmed = str.trim();
+		let subst = '';
+		const p = new CharPtr(trimmed);
+		while (p.deref()) {
+			if (p.deref() === '$' && p.deref(1) === '$') {
+				subst += '$';
+				p.advance();
+				p.advance();
+			} else if (p.deref() === '$' && p.deref(1) === '{') {
+				p.advance();
+				p.advance();
+				const varStart = p.dup();
+				while (p.deref() && p.deref() !== '}') p.advance();
+
+				const varname = varStart.slice(p.ptrdiff(varStart));
+
+				p.advance();
+
+				const varval = this.getVar(varname);
+
+				if (typeof varval === 'undefined') {
+					throw new Error(`Variable '${varname}' not defined in '${path}'`);
+				}
+
+				subst += varval;
+			} else {
+				subst += p.deref();
+				p.advance();
+			}
+		}
+
+		return subst;
+	}
+
+	private getVar(varName: string): string | undefined {
+		const varval = this.globals.get(varName);
+
+		// no feature to override variables. can be requested
+
+		return varval || this.vars.get(varName);
 	}
 }
 

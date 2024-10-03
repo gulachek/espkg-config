@@ -80,6 +80,13 @@ describe('pkg-config', () => {
 			await expectCflags(['cflags-abc'], ['-a', '-b', '-c']);
 		});
 
+		it('expands variables to flags', async () => {
+			await expectCflags(
+				['cflags-expand'],
+				['--hello', '--world', '${myvar}', '--hello', '--world'],
+			);
+		});
+
 		it('sorts "include" flags after "other" flags', async () => {
 			await expectCflags(
 				['cflags-i-other'],

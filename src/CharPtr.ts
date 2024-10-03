@@ -17,6 +17,25 @@ export class CharPtr {
 		return out;
 	}
 
+	public slice(n: number): string {
+		let i = this.i;
+		while (i < this.chars.length && i - this.i < n && this.chars[i] !== '\0') {
+			++i;
+		}
+
+		return this.chars.slice(this.i, i).join('');
+	}
+
+	public ptrdiff(rhsOther: CharPtr): number {
+		if (this.chars !== rhsOther.chars) {
+			throw new Error(
+				"Invalid ptrdiff operation. Pointers don't share a common base",
+			);
+		}
+
+		return this.i - rhsOther.i;
+	}
+
 	public setChar(c: string): void {
 		if (c.length !== 1) {
 			throw new Error(

@@ -1,0 +1,8 @@
+myvar = --hello --world
+emptyvar = 
+escaped = $${myvar}
+evaluated = ${myvar}
+Name:
+Version:
+Description:
+Cflags: ${myvar} ${emptyvar} ${escaped} ${evaluated}

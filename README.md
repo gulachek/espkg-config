@@ -25,5 +25,8 @@ This implementation makes no attempt to remove -I flags that might include direc
 known to gcc or msvc (like `CPATH`, `C_INCLUDE_PATH`, etc). This is equivalent to having
 the `PKG_CONFIG_ALLOW_SYSTEM_CFLAGS` environment variable set.
 
+There is also no feature to override package variables like `pkg-config`
+allows with `PKG_CONFIG_$PACKAGENAME_$VARIABLE`.
+
 Any other features are not planned to be supported, and issues can be opened to
 request new features.
