@@ -282,7 +282,6 @@ class Package {
 					break;
 			}
 		} else if (op === '=') {
-			// TODO defines_prefix seems to be a windows thing by default. Do we care?
 			if (this.vars.has(tag)) {
 				throw new Error(
 					`Duplicate definition of variable '${tag}' in '${path}'`,
