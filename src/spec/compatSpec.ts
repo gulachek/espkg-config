@@ -347,6 +347,20 @@ describe('pkg-config', () => {
 				/Package 'bad-no-desc' has no Description: field/,
 			);
 		});
+
+		it('fails if variable is defined twice', async () => {
+			await expectFailure(
+				['bad-dup-var'],
+				/Duplicate definition of variable 'myvar' in '.*bad-dup-var.pc'/,
+			);
+		});
+
+		it('fails if variable used but not defined', async () => {
+			await expectFailure(
+				['bad-undef-var'],
+				/Variable 'undef' not defined in '.*bad-undef-var.pc'/,
+			);
+		});
 	});
 });
 
