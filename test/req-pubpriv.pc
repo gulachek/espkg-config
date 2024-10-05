@@ -3,5 +3,5 @@ Version:
 Description: Requires both public.pc and private.pc
 
 Cflags: -DREQ_PUBPRIV -I/include/pubpriv
-Requires: public
-Requires.private: private
+Requires: public = 2.2.2
+Requires.private: private = 1.1.1

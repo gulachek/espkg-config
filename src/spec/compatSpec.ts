@@ -105,6 +105,34 @@ describe('pkg-config', () => {
 			);
 		});
 
+		describe('version operators', () => {
+			const flags = ['-DPUBLIC', '-I/include/public'];
+
+			it('=', async () => {
+				await expectCflags(['ok-eq'], flags);
+			});
+
+			it('!=', async () => {
+				await expectCflags(['ok-ne'], flags);
+			});
+
+			it('<', async () => {
+				await expectCflags(['ok-lt'], flags);
+			});
+
+			it('<=', async () => {
+				await expectCflags(['ok-lte'], flags);
+			});
+
+			it('>', async () => {
+				await expectCflags(['ok-gt'], flags);
+			});
+
+			it('>=', async () => {
+				await expectCflags(['ok-gte'], flags);
+			});
+		});
+
 		it('sorts "include" flags after "other" flags', async () => {
 			await expectCflags(
 				['cflags-i-other'],
