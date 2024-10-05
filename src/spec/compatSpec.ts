@@ -379,6 +379,13 @@ describe('pkg-config', () => {
 				/Variable 'undef' not defined in '.*bad-undef-var.pc'/,
 			);
 		});
+
+		it('fails if required module has wrong exact version', async () => {
+			await expectFailure(
+				['bad-req-exact-ver'],
+				/Package 'bad-req-exact-ver' requires 'cflags-abc = 1.1.1' but version of cflags-abc is 1.2.3/,
+			);
+		});
 	});
 });
 

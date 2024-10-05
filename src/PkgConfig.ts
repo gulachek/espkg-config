@@ -231,6 +231,7 @@ class Package {
 	public requiredVersions = new Map<string, RequiredVersion>();
 	public requires: Package[] = [];
 	public requiresPrivate: Package[] = [];
+	public url = '';
 
 	constructor(key: string, globals: Map<string, string>) {
 		this.key = key;
@@ -248,6 +249,19 @@ class Package {
 
 		if (typeof this.description === 'undefined') {
 			throw new Error(`Package '${this.key}' has no Description: field`);
+		}
+
+		for (const req of this.requiresPrivate) {
+			const ver = this.requiredVersions.get(req.key);
+			if (ver) {
+				if (!ver.test(req.version)) {
+					let err = `Package '${this.key}' requires '${ver.toString()}' but version of ${req.key} is ${req.version}`;
+					if (req.url)
+						err += `\nYou may find new versions of ${req.name} at ${req.url}`;
+
+					throw new Error(err);
+				}
+			}
 		}
 	}
 
@@ -732,13 +746,89 @@ function assertNotReached(): never {
 }
 
 enum ComparisonType {
-	LESS_THAN,
-	GREATER_THAN,
-	LESS_THAN_EQUAL,
-	GREATER_THAN_EQUAL,
-	EQUAL,
-	NOT_EQUAL,
-	ALWAYS_MATCH,
+	LESS_THAN = '<',
+	GREATER_THAN = '>',
+	LESS_THAN_EQUAL = '<=',
+	GREATER_THAN_EQUAL = '>=',
+	EQUAL = '=',
+	NOT_EQUAL = '!=',
+	ALWAYS_MATCH = '(any)',
+}
+
+function isDigit(c: string): boolean {
+	return '0' <= c && c <= '9';
+}
+
+function isAlpha(c: string): boolean {
+	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
+function isAlnum(c: string): boolean {
+	return isDigit(c) || isAlpha(c);
+}
+
+function rpmVerCmp(a: string, b: string): number {
+	if (a === b) return 0;
+
+	let isNum = false;
+
+	const str1 = new CharPtr(a);
+	const str2 = new CharPtr(b);
+
+	const one = str1.dup();
+	const two = str2.dup();
+
+	while (one.deref() && two.deref()) {
+		while (one.deref() && !isAlnum(one.deref())) one.advance();
+		while (two.deref() && !isAlnum(two.deref())) two.advance();
+
+		if (!(one.deref() && two.deref())) break;
+
+		str1.copyFrom(one);
+		str2.copyFrom(two);
+
+		if (isDigit(str1.deref())) {
+			while (str1.deref() && isDigit(str1.deref())) str1.advance();
+			while (str2.deref() && isDigit(str2.deref())) str2.advance();
+			isNum = true;
+		} else {
+			while (str1.deref() && isAlpha(str1.deref())) str1.advance();
+			while (str2.deref() && isAlpha(str2.deref())) str2.advance();
+			isNum = false;
+		}
+
+		const oldCh1 = str1.deref();
+		str1.setChar('\0');
+		const oldCh2 = str2.deref();
+		str2.setChar('\0');
+
+		if (one.ptrdiff(str1) === 0) return -1;
+		if (two.ptrdiff(str2) === 0) return isNum ? 1 : -1;
+
+		if (isNum) {
+			while (one.deref() === '0') one.advance();
+			while (two.deref() === '0') two.advance();
+
+			const oneStr = one.toString();
+			const twoStr = two.toString();
+			if (oneStr.length > twoStr.length) return 1;
+			if (twoStr.length > oneStr.length) return -1;
+		}
+
+		const oneStr = one.toString();
+		const twoStr = two.toString();
+		if (oneStr < twoStr) return -1;
+		if (twoStr < oneStr) return 1;
+
+		str1.setChar(oldCh1);
+		one.copyFrom(str1);
+		str2.setChar(oldCh2);
+		two.copyFrom(str2);
+	}
+
+	if (!one.deref() && !two.deref()) return 0;
+	if (!one.deref()) return -1;
+	return 1;
 }
 
 class RequiredVersion {
@@ -746,4 +836,30 @@ class RequiredVersion {
 	public comparison: ComparisonType;
 	public version: string;
 	public owner?: Package;
+
+	public test(version: string): boolean {
+		const rc = rpmVerCmp(version, this.version);
+		switch (this.comparison) {
+			case ComparisonType.LESS_THAN:
+				return rc < 0;
+			case ComparisonType.GREATER_THAN:
+				return rc > 0;
+			case ComparisonType.LESS_THAN_EQUAL:
+				return rc <= 0;
+			case ComparisonType.GREATER_THAN_EQUAL:
+				return rc >= 0;
+			case ComparisonType.EQUAL:
+				return rc === 0;
+			case ComparisonType.NOT_EQUAL:
+				return rc !== 0;
+			case ComparisonType.ALWAYS_MATCH:
+				return true;
+			default:
+				assertNotReached();
+		}
+	}
+
+	public toString(): string {
+		return `${this.name} ${this.comparison} ${this.version}`;
+	}
 }
