@@ -1,0 +1,7 @@
+prefix = /usr/local
+
+Name: libs-abc
+Version: 1.2.3
+Description: Demonstrates basic libs flags
+
+Libs: -L${prefix}/lib -labc

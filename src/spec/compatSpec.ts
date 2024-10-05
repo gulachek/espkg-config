@@ -35,6 +35,19 @@ describe('pkg-config', () => {
 		);
 	}
 
+	async function expectLibs(names: string[], libs: string[]): Promise<void> {
+		const proof = await exe.libs(names);
+		const actual = await pkg.libs(names);
+		expect(libs).to.deep.equal(
+			proof,
+			'The given libs did not match the reference pkg-config behavior',
+		);
+		expect(actual).to.deep.equal(
+			libs,
+			'The PkgConfig implementation did not match the expected libs',
+		);
+	}
+
 	describe('cflags', () => {
 		async function expectFailure(
 			names: string[],
@@ -422,6 +435,12 @@ describe('pkg-config', () => {
 			);
 		});
 	});
+
+	describe('libs', () => {
+		it('returns the parsed Libs flags', async () => {
+			await expectLibs(['libs-abc'], ['-L/usr/local/lib', '-labc']);
+		});
+	});
 });
 
 class PkgExe {
@@ -442,6 +461,11 @@ class PkgExe {
 
 	async cflags(names: string[]): Promise<string[]> {
 		const pkgOut = await this.spawn(['--cflags', ...names]);
+		return shellSplitWords(pkgOut);
+	}
+
+	async libs(names: string[]): Promise<string[]> {
+		const pkgOut = await this.spawn(['--libs', ...names]);
 		return shellSplitWords(pkgOut);
 	}
 }

@@ -38,17 +38,46 @@ export class PkgConfig {
 		const result: string[] = [];
 
 		result.push(
-			...this.getMultiMerged(packages, FlagType.CFLAGS_OTHER, false, true),
+			...this.getMultiMerged(
+				packages,
+				'cflags',
+				FlagType.CFLAGS_OTHER,
+				false,
+				true,
+			),
 		);
 		result.push(
-			...this.getMultiMerged(packages, FlagType.CFLAGS_I, true, true),
+			...this.getMultiMerged(packages, 'cflags', FlagType.CFLAGS_I, true, true),
 		);
+
+		return result;
+	}
+
+	async libs(moduleList: string[]): Promise<string[]> {
+		const packages: Package[] = [];
+
+		for (const name of moduleList) {
+			const req = await this.getPackage(name, true);
+
+			// TODO version test
+			packages.push(req);
+		}
+
+		const result: string[] = [];
+
+		result.push(
+			...this.getMultiMerged(packages, 'libs', FlagType.LIBS_L, false, true),
+		);
+
+		const lFlags = FlagType.LIBS_OTHER | FlagType.LIBS_l;
+		result.push(...this.getMultiMerged(packages, 'libs', lFlags, false, true));
 
 		return result;
 	}
 
 	private getMultiMerged(
 		packages: Package[],
+		keyProp: 'cflags' | 'libs',
 		flagType: FlagType,
 		inPathOrder: boolean,
 		includePrivate: boolean,
@@ -68,7 +97,7 @@ export class PkgConfig {
 
 		for (const pkg of expanded) {
 			// TODO handle libs
-			const flags = pkg.cflags;
+			const flags = pkg[keyProp];
 
 			for (const flag of flags) {
 				if (flag.hasType(flagType)) {
@@ -221,6 +250,8 @@ class Package {
 	public pcFileDir: string;
 	public vars = new Map<string, string>();
 	public cflags: Flag[] = [];
+	public libs: Flag[] = [];
+	private hasLibs = false;
 	public pathPosition: number = 0;
 	public name?: string;
 	public version?: string;
@@ -311,7 +342,7 @@ class Package {
 					// TODO
 					break;
 				case 'Libs':
-					// TODO
+					this.parseLibs(rest, path);
 					break;
 				case 'Cflags':
 				case 'CFlags':
@@ -339,6 +370,64 @@ class Package {
 			}
 
 			this.vars.set(tag, this.trimAndSub(rest, path));
+		}
+	}
+
+	private parseLibs(str: string, path: string): void {
+		if (this.hasLibs) {
+			throw new Error(`Libs field occurs multiple times in '${path}'`);
+		}
+
+		this.hasLibs = true;
+		const trimmed = this.trimAndSub(str, path);
+		if (!trimmed) return;
+
+		const { error, argv } = gShellParseArgv(trimmed);
+		if (error)
+			throw new Error(
+				`Couldn't parse Libs field into an argument vector: ${error}`,
+			);
+
+		this.doParseLibs(argv);
+	}
+
+	private doParseLibs(argv: string[]): void {
+		// TODO msvc syntax?
+		const Lflag = '-L';
+		const lflag = '-l';
+		const libSuffix = '';
+
+		for (let i = 0; i < argv.length; ++i) {
+			const arg = strdupEscapeShell(argv[i].trim());
+			const p = new CharPtr(arg);
+
+			if (arg.startsWith('-l') && !arg.startsWith('-lib:')) {
+				p.advance();
+				p.advance();
+				while (p.deref() && isSpace(p.deref())) p.advance();
+
+				const flag = new Flag(FlagType.LIBS_l, [
+					lflag + p.toString() + libSuffix,
+				]);
+				this.libs.push(flag);
+			} else if (arg.startsWith('-L')) {
+				p.advance();
+				p.advance();
+				while (p.deref() && isSpace(p.deref())) p.advance();
+
+				const flag = new Flag(FlagType.LIBS_L, [Lflag + p.toString()]);
+				this.libs.push(flag);
+			} else if (
+				(arg === '-framework' || arg === '-Wl,-framework') &&
+				i + 1 < argv.length
+			) {
+				const framework = strdupEscapeShell(argv[i + 1].trim());
+				const flag = new Flag(FlagType.LIBS_OTHER, [arg, framework]);
+				this.libs.push(flag);
+				i++;
+			} else if (arg) {
+				this.libs.push(new Flag(FlagType.LIBS_OTHER, [arg]));
+			}
 		}
 	}
 
@@ -528,8 +617,11 @@ class Package {
 }
 
 enum FlagType {
-	CFLAGS_I,
-	CFLAGS_OTHER,
+	CFLAGS_I = 1 << 0,
+	CFLAGS_OTHER = 1 << 1,
+	LIBS_L = 1 << 2,
+	LIBS_l = 1 << 3,
+	LIBS_OTHER = 1 << 4,
 }
 
 class Flag {
@@ -542,7 +634,7 @@ class Flag {
 	}
 
 	public hasType(type: FlagType): boolean {
-		return this.type === type;
+		return (this.type & type) !== 0;
 	}
 
 	public equals(other: Flag): boolean {
