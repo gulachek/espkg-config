@@ -87,6 +87,10 @@ describe('pkg-config', () => {
 			);
 		});
 
+		it('includes cflags from required modules', async () => {
+			await expectCflags(['req-abc'], ['-a', '-b', '-c']);
+		});
+
 		it('sorts "include" flags after "other" flags', async () => {
 			await expectCflags(
 				['cflags-i-other'],

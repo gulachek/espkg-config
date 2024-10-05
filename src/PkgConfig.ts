@@ -91,14 +91,19 @@ export class PkgConfig {
 
 	private recursiveFillList(
 		pkg: Package,
-		_includePrivate: boolean,
+		includePrivate: boolean,
 		visited: Set<string>,
 		expanded: Package[],
 	): void {
 		if (visited.has(pkg.key)) return;
 
 		visited.add(pkg.key);
+
 		// TODO handle requires/requires.private
+		const reqs = pkg.requires;
+		for (let i = reqs.length - 1; i >= 0; --i) {
+			this.recursiveFillList(reqs[i], includePrivate, visited, expanded);
+		}
 
 		expanded.unshift(pkg);
 	}
@@ -151,10 +156,21 @@ export class PkgConfig {
 
 		//if (!pkg) return null;
 
+		if (location.includes('uninstalled.pc')) pkg.uninstalled = true;
 		pkg.pathPosition = pathPosition;
 		this.packages.set(key, pkg);
 
-		if (location.includes('uninstalled.pc')) pkg.uninstalled = true;
+		for (const ver of pkg.requiresEntries) {
+			const req = await this.getPackage(ver.name, mustExist);
+			if (!req) {
+				throw new Error(
+					`Package '${ver.name}', required by '${pkg.key}', not found`,
+				);
+			}
+
+			pkg.requiredVersions.set(ver.name, ver);
+			pkg.requires.push(req);
+		}
 
 		// todo requires / requires.private
 
@@ -199,6 +215,9 @@ class Package {
 	public version?: string;
 	public description?: string;
 	private globals: Map<string, string>;
+	public requiresEntries: RequiredVersion[] = [];
+	public requiredVersions = new Map<string, RequiredVersion>();
+	public requires: Package[] = [];
 
 	constructor(key: string, globals: Map<string, string>) {
 		this.key = key;
@@ -259,7 +278,7 @@ class Package {
 					// TODO
 					break;
 				case 'Requires':
-					// TODO
+					this.parseRequires(rest, path);
 					break;
 				case 'Libs.private':
 					// TODO
@@ -329,6 +348,101 @@ class Package {
 
 			++i;
 		}
+	}
+
+	private parseRequires(str: string, path: string): void {
+		// TODO handle dup Requires field
+
+		const trimmed = this.trimAndSub(str, path);
+		this.requiresEntries = this.parseModuleList(trimmed, path);
+	}
+
+	private parseModuleList(str: string, path: string): RequiredVersion[] {
+		const split = splitModuleList(str);
+		const retval: RequiredVersion[] = [];
+
+		for (const iter of split) {
+			const p = new CharPtr(iter);
+			const ver = new RequiredVersion();
+			ver.comparison = ComparisonType.ALWAYS_MATCH;
+			ver.owner = this;
+			retval.push(ver);
+
+			while (p.deref() && isModuleSeparator(p.deref())) p.advance();
+
+			let start = p.dup();
+
+			while (p.deref() && !isSpace(p.deref())) p.advance();
+
+			while (p.deref() && isModuleSeparator(p.deref())) {
+				p.setChar('\0');
+				p.advance();
+			}
+
+			if (!start.deref()) {
+				throw new Error(
+					`Empty package name in Requires or Conflicts in file '${path}'`,
+				);
+			}
+
+			ver.name = start.toString();
+			start = p.dup();
+
+			while (p.deref() && !isSpace(p.deref())) p.advance();
+
+			while (p.deref() && isSpace(p.deref())) {
+				p.setChar('\0');
+				p.advance();
+			}
+
+			if (start.deref()) {
+				switch (start.toString()) {
+					case '=':
+						ver.comparison = ComparisonType.EQUAL;
+						break;
+					case '>=':
+						ver.comparison = ComparisonType.GREATER_THAN_EQUAL;
+						break;
+					case '<=':
+						ver.comparison = ComparisonType.LESS_THAN_EQUAL;
+						break;
+					case '>':
+						ver.comparison = ComparisonType.GREATER_THAN;
+						break;
+					case '<':
+						ver.comparison = ComparisonType.LESS_THAN;
+						break;
+					case '!=':
+						ver.comparison = ComparisonType.NOT_EQUAL;
+						break;
+					default:
+						throw new Error(
+							`Unknown version comparison operator '${start.toString()}' after package name '${ver.name}' in file '${path}'`,
+						);
+				}
+			}
+
+			start = p.dup();
+
+			while (p.deref() && !isModuleSeparator(p.deref())) p.advance();
+
+			while (p.deref() && isModuleSeparator(p.deref())) {
+				p.setChar('\0');
+				p.advance();
+			}
+
+			if (ver.comparison !== ComparisonType.ALWAYS_MATCH && !start.deref()) {
+				throw new Error(
+					`Comparison operator but no version after package name '${ver.name}' in file '${path}'`,
+				);
+			}
+
+			if (start.deref()) ver.version = start.toString();
+
+			if (!ver.name) assertNotReached();
+		}
+
+		return retval;
 	}
 
 	private trimAndSub(str: string, path: string): string {
@@ -475,4 +589,141 @@ async function readOneLine(file: FileStream): Promise<string> {
 
 function strdupEscapeShell(str: string): string {
 	return str;
+}
+
+enum ModuleSplitState {
+	OUTSIDE_MODULE,
+	IN_MODULE_NAME,
+	BEFORE_OPERATOR,
+	IN_OPERATOR,
+	AFTER_OPERATOR,
+	IN_MODULE_VERSION,
+}
+
+function isSpace(c: string): boolean {
+	switch (c) {
+		case ' ':
+		case '\n':
+		case '\t':
+		case '\n':
+		case '\f':
+		case '\v':
+			return true;
+		default:
+			return false;
+	}
+}
+
+function isModuleSeparator(c: string): boolean {
+	return c === ',' || isSpace(c);
+}
+
+function isOperatorChar(c: string): boolean {
+	switch (c) {
+		case '<':
+		case '>':
+		case '!':
+		case '=':
+			return true;
+		default:
+			return false;
+	}
+}
+
+function splitModuleList(str: string): string[] {
+	const retval: string[] = [];
+	let state = ModuleSplitState.OUTSIDE_MODULE;
+	let lastState = ModuleSplitState.OUTSIDE_MODULE;
+
+	let start = new CharPtr(str);
+	const p = start.dup();
+
+	while (p.deref()) {
+		switch (state) {
+			case ModuleSplitState.OUTSIDE_MODULE:
+				if (!isModuleSeparator(p.deref()))
+					state = ModuleSplitState.IN_MODULE_NAME;
+				break;
+
+			case ModuleSplitState.IN_MODULE_NAME:
+				if (isSpace(p.deref())) {
+					const s = p.dup();
+					while (s.deref() && isSpace(s.deref())) s.advance();
+
+					if (!s.deref()) state = ModuleSplitState.OUTSIDE_MODULE;
+					else if (isModuleSeparator(s.deref()))
+						state = ModuleSplitState.OUTSIDE_MODULE;
+					else if (isOperatorChar(s.deref()))
+						state = ModuleSplitState.BEFORE_OPERATOR;
+					else state = ModuleSplitState.OUTSIDE_MODULE;
+				} else if (isModuleSeparator(p.deref())) {
+					state = ModuleSplitState.OUTSIDE_MODULE;
+				}
+
+				break;
+
+			case ModuleSplitState.BEFORE_OPERATOR:
+				if (isOperatorChar(p.deref())) state = ModuleSplitState.IN_OPERATOR;
+				else if (!isSpace(p.deref())) assertNotReached();
+				break;
+
+			case ModuleSplitState.IN_OPERATOR:
+				if (!isOperatorChar(p.deref())) state = ModuleSplitState.AFTER_OPERATOR;
+				break;
+
+			case ModuleSplitState.AFTER_OPERATOR:
+				if (!isSpace(p.deref())) state = ModuleSplitState.IN_MODULE_VERSION;
+				break;
+
+			case ModuleSplitState.IN_MODULE_VERSION:
+				if (isModuleSeparator(p.deref()))
+					state = ModuleSplitState.OUTSIDE_MODULE;
+				break;
+
+			default:
+				assertNotReached();
+		}
+
+		if (
+			state === ModuleSplitState.OUTSIDE_MODULE &&
+			lastState !== ModuleSplitState.OUTSIDE_MODULE
+		) {
+			const module = start.slice(p.ptrdiff(start));
+			retval.push(module);
+
+			start = p.dup();
+		}
+
+		lastState = state;
+		p.advance();
+	}
+
+	const n = p.ptrdiff(start);
+	if (n !== 0) {
+		const module = start.slice(n);
+		retval.push(module);
+	}
+
+	return retval;
+}
+
+function assertNotReached(): never {
+	throw new Error('PkgConfig is in an unexpected state. Please file a bug.');
+}
+
+enum ComparisonType {
+	LESS_THAN,
+	GREATER_THAN,
+	LESS_THAN_EQUAL,
+	GREATER_THAN_EQUAL,
+	EQUAL,
+	NOT_EQUAL,
+	ALWAYS_MATCH,
+}
+
+class RequiredVersion {
+	public name: string;
+	public comparison: ComparisonType;
+	public version: string;
+	public owner?: Package;
 }

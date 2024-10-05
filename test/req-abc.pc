@@ -1,0 +1,5 @@
+Name: req-abc
+Description: This requires cflags-abc
+Version:
+
+Requires: cflags-abc
