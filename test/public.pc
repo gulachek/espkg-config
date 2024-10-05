@@ -1,0 +1,5 @@
+Name: public
+Description: Requires module to include
+Version: 2.2.2
+
+Cflags: -DPUBLIC -I/include/public

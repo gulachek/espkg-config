@@ -1,0 +1,7 @@
+Name: req-pubpriv
+Version:
+Description: Requires both public.pc and private.pc
+
+Cflags: -DREQ_PUBPRIV -I/include/pubpriv
+Requires: public
+Requires.private: private

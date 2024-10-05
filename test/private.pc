@@ -1,0 +1,5 @@
+Name: private
+Description: Requires.private module to include
+Version: 1.1.1
+
+Cflags: -DPRIVATE -I/include/private

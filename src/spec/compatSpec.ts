@@ -91,6 +91,20 @@ describe('pkg-config', () => {
 			await expectCflags(['req-abc'], ['-a', '-b', '-c']);
 		});
 
+		it('includes cflags from private required modules', async () => {
+			await expectCflags(
+				['req-pubpriv'],
+				[
+					'-DREQ_PUBPRIV',
+					'-DPRIVATE',
+					'-DPUBLIC',
+					'-I/include/pubpriv',
+					'-I/include/private',
+					'-I/include/public',
+				],
+			);
+		});
+
 		it('sorts "include" flags after "other" flags', async () => {
 			await expectCflags(
 				['cflags-i-other'],

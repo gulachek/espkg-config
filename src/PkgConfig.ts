@@ -99,8 +99,7 @@ export class PkgConfig {
 
 		visited.add(pkg.key);
 
-		// TODO handle requires/requires.private
-		const reqs = pkg.requires;
+		const reqs = includePrivate ? pkg.requiresPrivate : pkg.requires;
 		for (let i = reqs.length - 1; i >= 0; --i) {
 			this.recursiveFillList(reqs[i], includePrivate, visited, expanded);
 		}
@@ -172,7 +171,19 @@ export class PkgConfig {
 			pkg.requires.push(req);
 		}
 
-		// todo requires / requires.private
+		for (const ver of pkg.requiresPrivateEntries) {
+			const req = await this.getPackage(ver.name, mustExist);
+			if (!req) {
+				throw new Error(
+					`Package '${ver.name}', required by '${pkg.key}', not found`,
+				);
+			}
+
+			pkg.requiredVersions.set(ver.name, ver);
+			pkg.requiresPrivate.push(req);
+		}
+
+		pkg.requiresPrivate = [...pkg.requiresPrivate, ...pkg.requires];
 
 		pkg.verify();
 
@@ -216,8 +227,10 @@ class Package {
 	public description?: string;
 	private globals: Map<string, string>;
 	public requiresEntries: RequiredVersion[] = [];
+	public requiresPrivateEntries: RequiredVersion[] = [];
 	public requiredVersions = new Map<string, RequiredVersion>();
 	public requires: Package[] = [];
+	public requiresPrivate: Package[] = [];
 
 	constructor(key: string, globals: Map<string, string>) {
 		this.key = key;
@@ -275,7 +288,7 @@ class Package {
 					this.description = this.trimAndSub(rest, path);
 					break;
 				case 'Requires.private':
-					// TODO
+					this.parseRequiresPrivate(rest, path);
 					break;
 				case 'Requires':
 					this.parseRequires(rest, path);
@@ -355,6 +368,13 @@ class Package {
 
 		const trimmed = this.trimAndSub(str, path);
 		this.requiresEntries = this.parseModuleList(trimmed, path);
+	}
+
+	private parseRequiresPrivate(str: string, path: string): void {
+		// TODO handle dup Requires.private field
+
+		const trimmed = this.trimAndSub(str, path);
+		this.requiresPrivateEntries = this.parseModuleList(trimmed, path);
 	}
 
 	private parseModuleList(str: string, path: string): RequiredVersion[] {
