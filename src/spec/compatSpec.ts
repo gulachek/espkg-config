@@ -414,6 +414,13 @@ describe('pkg-config', () => {
 				/Package 'bad-req-exact-ver' requires 'cflags-abc = 1.1.1' but version of cflags-abc is 1.2.3/,
 			);
 		});
+
+		it("suggests requirement's URL if mismatched version", async () => {
+			await expectFailure(
+				['bad-req-exact-ver'],
+				/You may find new versions of cflags-abc at http:\/\/example.com\/abc/,
+			);
+		});
 	});
 });
 

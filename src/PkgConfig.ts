@@ -231,7 +231,7 @@ class Package {
 	public requiredVersions = new Map<string, RequiredVersion>();
 	public requires: Package[] = [];
 	public requiresPrivate: Package[] = [];
-	public url = '';
+	public url?: string;
 
 	constructor(key: string, globals: Map<string, string>) {
 		this.key = key;
@@ -321,7 +321,11 @@ class Package {
 					// TODO
 					break;
 				case 'URL':
-					// TODO
+					if (typeof this.url === 'string') {
+						throw new Error(`URL field occurs multiple times in '${path}'`);
+					}
+
+					this.url = this.trimAndSub(rest, path);
 					break;
 				default:
 					// pkg-config doesn't error here hoping for future compatibility
