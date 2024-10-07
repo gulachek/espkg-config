@@ -1,0 +1,6 @@
+Name:
+Version:
+Description:
+
+URL:
+URL: https://example.com # bad :(

@@ -407,6 +407,13 @@ describe('pkg-config', () => {
 			);
 		});
 
+		it('fails if URL is defined twice', async () => {
+			await expectFailure(
+				['bad-dup-url'],
+				/URL field occurs [\w ]+in '.*bad-dup-url.pc'/,
+			);
+		});
+
 		it('fails if variable is defined twice', async () => {
 			await expectFailure(
 				['bad-dup-var'],
