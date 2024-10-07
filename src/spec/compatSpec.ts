@@ -533,6 +533,10 @@ describe('pkg-config', () => {
 			await expectLibs(['libs-space'], ['-L /lib', '-l lib']);
 		});
 
+		it('returns empty array when Libs is empty', async () => {
+			await expectLibs(['libs-empty'], []);
+		});
+
 		it('fails with duplicate Libs fields', async () => {
 			await expectFailure(
 				['bad-dup-libs'],
