@@ -1,0 +1,5 @@
+Name:
+Description:
+Version:
+
+Libs: '-l lib' '-L /lib'

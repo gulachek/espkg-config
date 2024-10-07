@@ -462,6 +462,15 @@ describe('pkg-config', () => {
 				],
 			);
 		});
+
+		it('preserves ws in -l and -L', async () => {
+			/* It looks like pkg-config tries to not do this, but the
+			 * logic that's supposed to normalize the space right away comes
+			 * right after the shell escaping function, rendering the space
+			 * checks useless
+			 */
+			await expectLibs(['libs-space'], ['-L /lib', '-l lib']);
+		});
 	});
 });
 

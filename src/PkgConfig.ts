@@ -393,35 +393,20 @@ class Package {
 
 	private doParseLibs(argv: string[]): void {
 		// TODO msvc syntax?
-		const Lflag = '-L';
-		const lflag = '-l';
-		const libSuffix = '';
-
 		for (let i = 0; i < argv.length; ++i) {
-			const arg = strdupEscapeShell(argv[i].trim());
-			const p = new CharPtr(arg);
+			const arg = argv[i].trim();
 
 			if (arg.startsWith('-l') && !arg.startsWith('-lib:')) {
-				p.advance();
-				p.advance();
-				while (p.deref() && isSpace(p.deref())) p.advance();
-
-				const flag = new Flag(FlagType.LIBS_l, [
-					lflag + p.toString() + libSuffix,
-				]);
+				const flag = new Flag(FlagType.LIBS_l, [arg]);
 				this.libs.push(flag);
 			} else if (arg.startsWith('-L')) {
-				p.advance();
-				p.advance();
-				while (p.deref() && isSpace(p.deref())) p.advance();
-
-				const flag = new Flag(FlagType.LIBS_L, [Lflag + p.toString()]);
+				const flag = new Flag(FlagType.LIBS_L, [arg]);
 				this.libs.push(flag);
 			} else if (
 				(arg === '-framework' || arg === '-Wl,-framework') &&
 				i + 1 < argv.length
 			) {
-				const framework = strdupEscapeShell(argv[i + 1].trim());
+				const framework = argv[i + 1].trim();
 				const flag = new Flag(FlagType.LIBS_OTHER, [arg, framework]);
 				this.libs.push(flag);
 				i++;
@@ -447,7 +432,7 @@ class Package {
 
 		let i = 0;
 		while (i < argv.length) {
-			const arg = strdupEscapeShell(argv[i].trim());
+			const arg = argv[i].trim();
 
 			const includeMatch = arg.match(/^-I\s*(.*)$/);
 			if (includeMatch) {
@@ -457,7 +442,7 @@ class Package {
 				(arg === '-idirafter' || arg === '-isystem') &&
 				i + 1 < argv.length
 			) {
-				const option = strdupEscapeShell(argv[i + 1]);
+				const option = argv[i + 1];
 				const flag = new Flag(FlagType.CFLAGS_I, [arg, option]);
 				this.cflags.push(flag);
 				i++;
@@ -715,10 +700,6 @@ async function readOneLine(file: FileStream): Promise<string> {
 			}
 		}
 	}
-}
-
-function strdupEscapeShell(str: string): string {
-	return str;
 }
 
 enum ModuleSplitState {
