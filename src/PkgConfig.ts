@@ -236,7 +236,7 @@ export class PkgConfig {
 		const file = new FileStream(path);
 		await file.load();
 		while (!file.eof()) {
-			const line = await readOneLine(file);
+			const line = readOneLine(file);
 			pkg.parseLine(line, path);
 		}
 
@@ -635,7 +635,7 @@ class Flag {
 	}
 }
 
-async function readOneLine(file: FileStream): Promise<string> {
+function readOneLine(file: FileStream): string {
 	let quoted = false;
 	let comment = false;
 
