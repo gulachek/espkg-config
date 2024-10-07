@@ -440,6 +440,13 @@ describe('pkg-config', () => {
 		it('returns the parsed Libs flags', async () => {
 			await expectLibs(['libs-abc'], ['-L/usr/local/lib', '-labc']);
 		});
+
+		it('includes link flags only from public Requires', async () => {
+			await expectLibs(
+				['req-pubpriv'],
+				['-L/lib/pubpriv', '-L/lib/public', '-lreq', '-lpublic'],
+			);
+		});
 	});
 });
 

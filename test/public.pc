@@ -3,3 +3,4 @@ Description: Requires module to include
 Version: 2.2.2
 
 Cflags: -DPUBLIC -I/include/public
+Libs: -L/lib/public -lpublic

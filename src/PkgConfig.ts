@@ -66,11 +66,11 @@ export class PkgConfig {
 		const result: string[] = [];
 
 		result.push(
-			...this.getMultiMerged(packages, 'libs', FlagType.LIBS_L, false, true),
+			...this.getMultiMerged(packages, 'libs', FlagType.LIBS_L, false, false),
 		);
 
 		const lFlags = FlagType.LIBS_OTHER | FlagType.LIBS_l;
-		result.push(...this.getMultiMerged(packages, 'libs', lFlags, false, true));
+		result.push(...this.getMultiMerged(packages, 'libs', lFlags, false, false));
 
 		return result;
 	}
