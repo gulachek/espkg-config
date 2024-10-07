@@ -225,12 +225,7 @@ export class PkgConfig {
 	): Promise<Package | null> {
 		const pkg = new Package(key, this.globals);
 
-		if (path) {
-			pkg.pcFileDir = dirname(path);
-		} else {
-			pkg.pcFileDir = '???????';
-		}
-
+		pkg.pcFileDir = dirname(path);
 		pkg.vars.set('pcfiledir', pkg.pcFileDir);
 
 		const file = new FileStream(path);
