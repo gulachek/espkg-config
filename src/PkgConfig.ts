@@ -189,7 +189,7 @@ export class PkgConfig {
 		this.packages.set(key, pkg);
 
 		for (const ver of pkg.requiresEntries) {
-			const req = await this.getPackage(ver.name, mustExist);
+			const req = await this.getPackage(ver.name, false);
 			if (!req) {
 				throw new Error(
 					`Package '${ver.name}', required by '${pkg.key}', not found`,
@@ -201,7 +201,7 @@ export class PkgConfig {
 		}
 
 		for (const ver of pkg.requiresPrivateEntries) {
-			const req = await this.getPackage(ver.name, mustExist);
+			const req = await this.getPackage(ver.name, false);
 			if (!req) {
 				throw new Error(
 					`Package '${ver.name}', required by '${pkg.key}', not found`,

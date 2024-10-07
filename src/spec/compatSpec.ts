@@ -434,6 +434,20 @@ describe('pkg-config', () => {
 				/You may find new versions of cflags-abc at http:\/\/example.com\/abc/,
 			);
 		});
+
+		it('Fails if there is a missing Requires entry', async () => {
+			await expectFailure(
+				['bad-req-missing'],
+				/Package 'intentionally-missing', required by 'bad-req-missing', not found/,
+			);
+		});
+
+		it('Fails if there is a missing Requires.private entry', async () => {
+			await expectFailure(
+				['bad-priv-req-missing'],
+				/Package 'intentionally-missing', required by 'bad-priv-req-missing', not found/,
+			);
+		});
 	});
 
 	describe('libs', () => {
