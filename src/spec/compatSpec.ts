@@ -458,6 +458,46 @@ describe('pkg-config', () => {
 	});
 
 	describe('libs', () => {
+		async function expectFailure(
+			names: string[],
+			msgs: ErrorMatch,
+		): Promise<void> {
+			let exeFail = true,
+				pkgFail = true;
+
+			const { ref, self } = errMatchers(msgs);
+
+			try {
+				await exe.libs(names);
+				exeFail = false;
+			} catch (ex) {
+				expect(ex.message).to.match(
+					ref,
+					`Reference pkg-config behavior did not exit with expected error. Text:\n${ex.message}`,
+				);
+			}
+
+			try {
+				await pkg.libs(names);
+				pkgFail = false;
+			} catch (ex) {
+				expect(ex.message).to.match(
+					self,
+					`PkgConfig implementation did not throw expected error. Text:\n${ex.message}`,
+				);
+			}
+
+			expect(
+				exeFail,
+				'Expected reference pkg-config behavior to exit with an error, but it exited successfully.',
+			).to.be.true;
+
+			expect(
+				pkgFail,
+				'Expected PkgConfig implementation to throw, but returned successfully.',
+			).to.be.true;
+		}
+
 		it('returns the parsed Libs flags', async () => {
 			await expectLibs(['libs-abc'], ['-L/usr/local/lib', '-labc']);
 		});
@@ -491,6 +531,13 @@ describe('pkg-config', () => {
 			 * checks useless
 			 */
 			await expectLibs(['libs-space'], ['-L /lib', '-l lib']);
+		});
+
+		it('fails with duplicate Libs fields', async () => {
+			await expectFailure(
+				['bad-dup-libs'],
+				/Libs field occurs [a-z ]+in '.*bad-dup-libs.pc'/,
+			);
 		});
 	});
 });
