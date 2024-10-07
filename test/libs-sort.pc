@@ -1,0 +1,5 @@
+Name:
+Version:
+Description:
+
+Libs: -llib -framework Foo --other -Wl,-framework Bar -L/usr/local/lib

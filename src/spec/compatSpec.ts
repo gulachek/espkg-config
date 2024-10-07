@@ -447,6 +447,21 @@ describe('pkg-config', () => {
 				['-L/lib/pubpriv', '-L/lib/public', '-lreq', '-lpublic'],
 			);
 		});
+
+		it('sorts -L flags before -l and -framework', async () => {
+			await expectLibs(
+				['libs-sort'],
+				[
+					'-L/usr/local/lib',
+					'-llib',
+					'-framework',
+					'Foo',
+					'--other',
+					'-Wl,-framework',
+					'Bar',
+				],
+			);
+		});
 	});
 });
 
