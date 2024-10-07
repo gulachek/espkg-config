@@ -543,6 +543,13 @@ describe('pkg-config', () => {
 				/Libs field occurs [a-z ]+in '.*bad-dup-libs.pc'/,
 			);
 		});
+
+		it("fails if quote isn't terminated", async () => {
+			await expectFailure(
+				['bad-libs-open-quote'],
+				/Couldn't parse Libs field into an argument vector: Text ended before matching quote was found for '/,
+			);
+		});
 	});
 });
 
