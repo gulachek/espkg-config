@@ -118,6 +118,14 @@ describe('pkg-config', () => {
 			);
 		});
 
+		it('can require multiple modules in the same statement', async () => {
+			debugger;
+			await expectCflags(
+				['req-multiple'],
+				['-a', '-b', '-c', '-DPUBLIC', '-I/include/public'],
+			);
+		});
+
 		describe('version operators', () => {
 			const flags = ['-DPUBLIC', '-I/include/public'];
 

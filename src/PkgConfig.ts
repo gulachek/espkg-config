@@ -892,9 +892,9 @@ function rpmVerCmp(a: string, b: string): number {
 		if (oneStr < twoStr) return -1;
 		if (twoStr < oneStr) return 1;
 
-		str1.setChar(oldCh1);
+		oldCh1 && str1.setChar(oldCh1);
 		one.copyFrom(str1);
-		str2.setChar(oldCh2);
+		oldCh2 && str2.setChar(oldCh2);
 		two.copyFrom(str2);
 	}
 

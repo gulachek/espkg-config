@@ -1,0 +1,10 @@
+Name:
+Version:
+Description:
+
+# module separator -> \m, not module sep -> \M
+# splitting:
+# \m*\M*\s+\o+\s*
+# parsing after being split:
+# \m*(\S*)\m*(\S*)\s*(\M*)\m*
+Requires: ,,,cflags-abc > 1,,,,,,    public   
