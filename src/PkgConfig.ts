@@ -546,6 +546,7 @@ class Package {
 
 			if (start.deref()) ver.version = start.toString();
 
+			/* istanbul ignore next */
 			if (!ver.name) assertNotReached();
 		}
 
@@ -756,10 +757,7 @@ function splitModuleList(str: string): string[] {
 					const s = p.dup();
 					while (s.deref() && isSpace(s.deref())) s.advance();
 
-					if (!s.deref()) state = ModuleSplitState.OUTSIDE_MODULE;
-					else if (isModuleSeparator(s.deref()))
-						state = ModuleSplitState.OUTSIDE_MODULE;
-					else if (isOperatorChar(s.deref()))
+					if (isOperatorChar(s.deref()))
 						state = ModuleSplitState.BEFORE_OPERATOR;
 					else state = ModuleSplitState.OUTSIDE_MODULE;
 				} else if (isModuleSeparator(p.deref())) {
@@ -769,6 +767,7 @@ function splitModuleList(str: string): string[] {
 				break;
 
 			case ModuleSplitState.BEFORE_OPERATOR:
+				/* istanbul ignore else */
 				if (isOperatorChar(p.deref())) state = ModuleSplitState.IN_OPERATOR;
 				else if (!isSpace(p.deref())) assertNotReached();
 				break;
@@ -786,6 +785,7 @@ function splitModuleList(str: string): string[] {
 					state = ModuleSplitState.OUTSIDE_MODULE;
 				break;
 
+			/* istanbul ignore next */
 			default:
 				assertNotReached();
 		}
@@ -813,6 +813,7 @@ function splitModuleList(str: string): string[] {
 	return retval;
 }
 
+/* istanbul ignore next */
 function assertNotReached(): never {
 	throw new Error('PkgConfig is in an unexpected state. Please file a bug.');
 }
@@ -926,6 +927,7 @@ class RequiredVersion {
 				return rc !== 0;
 			case ComparisonType.ALWAYS_MATCH:
 				return true;
+			/* istanbul ignore next */
 			default:
 				assertNotReached();
 		}

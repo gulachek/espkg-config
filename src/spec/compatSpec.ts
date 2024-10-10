@@ -119,7 +119,6 @@ describe('pkg-config', () => {
 		});
 
 		it('can require multiple modules in the same statement', async () => {
-			debugger;
 			await expectCflags(
 				['req-multiple'],
 				['-a', '-b', '-c', '-DPUBLIC', '-I/include/public'],
@@ -461,6 +460,27 @@ describe('pkg-config', () => {
 			await expectFailure(
 				['bad-priv-req-missing'],
 				/Package 'intentionally-missing', required by 'bad-priv-req-missing', not found/,
+			);
+		});
+
+		it('Fails if Requires has a comparison w/o a version', async () => {
+			await expectFailure(
+				['bad-req-no-version'],
+				/Comparison operator but no version after package name 'cflags-abc' in file '.*bad-req-no-version.pc'/,
+			);
+		});
+
+		it('Fails if Requires has an empty module name', async () => {
+			await expectFailure(
+				['bad-req-empty-name'],
+				/Empty package name in Requires or Conflicts in file '.*bad-req-empty-name.pc'/,
+			);
+		});
+
+		it('Fails if Requires has an invalid operator', async () => {
+			await expectFailure(
+				['bad-req-op'],
+				/Unknown version comparison operator '==' after package name 'cflags-abc' in file '.*bad-req-op.pc'/,
 			);
 		});
 	});

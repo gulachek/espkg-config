@@ -1,0 +1,6 @@
+Name:
+Description:
+Version:
+
+CFlags: --bad
+Requires: cflags-abc > ,10 # pc treats this as no version

@@ -7,4 +7,4 @@ Description:
 # \m*\M*\s+\o+\s*
 # parsing after being split:
 # \m*(\S*)\m*(\S*)\s*(\M*)\m*
-Requires: ,,,cflags-abc > 1,,,,,,    public   
+Requires: ,,,cflags-abc > 1,,,,,,    public   ,public,public  public    	
