@@ -842,7 +842,7 @@ function isAlnum(c: string): boolean {
 	return isDigit(c) || isAlpha(c);
 }
 
-function rpmVerCmp(a: string, b: string): number {
+export function rpmVerCmp(a: string, b: string): number {
 	if (a === b) return 0;
 
 	let isNum = false;
@@ -877,7 +877,7 @@ function rpmVerCmp(a: string, b: string): number {
 		const oldCh2 = str2.deref();
 		str2.setChar('\0');
 
-		if (one.ptrdiff(str1) === 0) return -1;
+		//if (one.ptrdiff(str1) === 0) return -1; can't happen
 		if (two.ptrdiff(str2) === 0) return isNum ? 1 : -1;
 
 		if (isNum) {
