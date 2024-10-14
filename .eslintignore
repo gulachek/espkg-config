@@ -1,0 +1,6 @@
+dist
+coverage
+types
+build
+node_modules
+.cache

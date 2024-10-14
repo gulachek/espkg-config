@@ -27,12 +27,12 @@ export function gShellParseArgv(cmdLine: string): GParseArgvResult {
 function tokenizeCommandLine(cmdLine: string): GParseArgvResult {
 	let currentQuote = ''; // this is like reference having '\0'
 	let quoted = false;
-	let currentToken = new Token();
+	const currentToken = new Token();
 	const result: GParseArgvResult = {
 		argv: [],
 	};
 
-	let retval: string[] = [];
+	const retval: string[] = [];
 	const p = new CharPtr(cmdLine);
 
 	while (p.deref()) {
@@ -67,6 +67,7 @@ function tokenizeCommandLine(cmdLine: string): GParseArgvResult {
 				case "'":
 				case '"':
 					currentToken.append(p.deref());
+				// eslint-disable-next-line no-fallthrough
 				case '\\':
 					currentQuote = p.deref();
 					break;

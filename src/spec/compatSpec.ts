@@ -683,11 +683,7 @@ interface ErrorMatchObj {
 type ErrorMatch = RegExp | ErrorMatchObj;
 
 function isErrMatchObj(obj: unknown): obj is ErrorMatchObj {
-	return (
-		typeof obj === 'object' &&
-		obj.hasOwnProperty('self') &&
-		obj.hasOwnProperty('ref')
-	);
+	return typeof obj === 'object' && 'self' in obj && 'ref' in obj;
 }
 
 function errMatchers(match: ErrorMatch): ErrorMatchObj {

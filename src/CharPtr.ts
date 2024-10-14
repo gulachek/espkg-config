@@ -62,8 +62,8 @@ export class CharPtr {
 	}
 
 	public deref(offset?: number): string {
-		let o = typeof offset === 'undefined' ? 0 : offset;
-		let i = this.i + o;
+		const o = typeof offset === 'undefined' ? 0 : offset;
+		const i = this.i + o;
 
 		if (i < 0 || i > this.chars.length)
 			throw new Error(

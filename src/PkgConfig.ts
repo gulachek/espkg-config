@@ -637,6 +637,7 @@ function readOneLine(file: FileStream): string {
 
 	let line = '';
 
+	// eslint-disable-next-line no-constant-condition
 	while (true) {
 		const c = file.getc();
 		if (!c /* EOF */) {
@@ -652,7 +653,7 @@ function readOneLine(file: FileStream): string {
 					line += '#';
 					break;
 				case '\r':
-				case '\n':
+				case '\n': {
 					const nextC = file.getc();
 
 					if (
@@ -668,6 +669,7 @@ function readOneLine(file: FileStream): string {
 						file.ungetc(nextC);
 
 					break;
+				}
 				default:
 					line += `\\${c}`;
 			}
@@ -679,7 +681,7 @@ function readOneLine(file: FileStream): string {
 				case '\\':
 					if (!comment) quoted = true;
 					break;
-				case '\n':
+				case '\n': {
 					const nextC = file.getc();
 					if (
 						!(
@@ -691,6 +693,7 @@ function readOneLine(file: FileStream): string {
 						file.ungetc(nextC);
 
 					return line;
+				}
 				default:
 					if (!comment) line += c;
 			}
@@ -712,7 +715,6 @@ function isSpace(c: string): boolean {
 		case ' ':
 		case '\n':
 		case '\t':
-		case '\n':
 		case '\f':
 		case '\v':
 			return true;
