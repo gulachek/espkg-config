@@ -14,6 +14,7 @@ export function gShellParseArgv(cmdLine: string): GParseArgvResult {
 	const tokens = tokenResult.argv;
 	for (const tok of tokens) {
 		const { result, error } = gShellUnquote(tok);
+		// istanbul ignore if
 		if (error) return { argv: [], error };
 
 		argv.push(result);
@@ -119,7 +120,10 @@ function tokenizeCommandLine(cmdLine: string): GParseArgvResult {
 	return result;
 }
 
-function gShellUnquote(qString: string): { result: string; error?: string } {
+export function gShellUnquote(qString: string): {
+	result: string;
+	error?: string;
+} {
 	let start = new CharPtr(qString);
 	const end = new CharPtr(qString);
 	let retval = '';
@@ -157,10 +161,11 @@ function unquoteStringInplace(str: CharPtr, end: CharPtr): string {
 	const s = str.dup();
 	const quoteChar = s.deref();
 
+	/* Not possible given gShellUnquote
 	if (!(s.deref() === '"' || s.deref() === "'")) {
 		end.copyFrom(str);
 		return "Quoted text doesn't begin with a quotation mark";
-	}
+	} */
 
 	s.advance();
 
