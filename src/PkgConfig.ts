@@ -10,11 +10,6 @@ export class PkgConfig {
 	private globals = new Map<string, string>();
 
 	/** @todo
-	 * global variables:
-	 * pc_sysrootdir
-	 * pc_top_builddir
-	 *
-	 * requires private
 	 * libs private
 	 * pkg virtual package
 	 * module versions in names
@@ -96,7 +91,6 @@ export class PkgConfig {
 		}
 
 		for (const pkg of expanded) {
-			// TODO handle libs
 			const flags = pkg[keyProp];
 
 			for (const flag of flags) {
