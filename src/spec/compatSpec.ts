@@ -212,6 +212,10 @@ describe('pkg-config', () => {
 			await expectCflags(['cflags-comment'], ['--no-comment']);
 		});
 
+		it('has a pkg-config virtual package', async () => {
+			await expectCflags(['cflags-req-pc'], ['--success']);
+		});
+
 		it('fails if the first character in cflags is escaped #', async () => {
 			await expectFailure(
 				['bad-cflags-begin-esc-comment'],

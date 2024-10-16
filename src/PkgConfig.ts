@@ -3,6 +3,9 @@ import { gShellParseArgv } from './gShell';
 import { FileStream, isRegularFile } from './files';
 import { CharPtr } from './CharPtr';
 
+/** The pkg-config version we're mimicking */
+const SIMULATED_VERSION = '0.29.2';
+
 export class PkgConfig {
 	private searchPaths: string[];
 	private packages: Map<string, Package>;
@@ -11,13 +14,20 @@ export class PkgConfig {
 
 	/** @todo
 	 * libs private
-	 * pkg virtual package
 	 * module versions in names
 	 */
 
 	public constructor(opts: { searchPaths: string[] }) {
 		this.searchPaths = [...opts.searchPaths];
 		this.packages = new Map<string, Package>();
+
+		const pkgKey = 'pkg-config';
+		const pkg = new Package(pkgKey, this.globals);
+		pkg.name = pkgKey;
+		pkg.version = SIMULATED_VERSION;
+		pkg.description = `pkg-config is a system for managing compile/link flags for libraries`;
+		pkg.url = 'http://pkg-config.freedesktop.org/';
+		this.packages.set(pkgKey, pkg);
 	}
 
 	async cflags(moduleList: string[]): Promise<string[]> {
