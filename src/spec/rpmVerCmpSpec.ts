@@ -13,6 +13,12 @@ function gt(a: string, b: string): void {
 	expect(rpmVerCmp(a, b)).to.be.greaterThan(0);
 }
 
+/* went through all of these to verify. for example
+ * (lldb) expr rpmvercmp("","")
+ * (int) $0 = 0
+ * (lldb) expr rpmvercmp("&*(",")*$")
+ * (int) $1 = 0
+ */
 describe('rpmVerCmp', () => {
 	it('treats two empty strings as eq', () => {
 		eq('', '');
@@ -58,9 +64,11 @@ describe('rpmVerCmp', () => {
 
 	it('splits over non alphanumerics', () => {
 		eq('abc.0012', 'abc.12');
+		eq('abc.0012', 'abc**12');
 	});
 
 	it('splits over change from number to alpha', () => {
 		eq('123abc', '0000123abc');
 	});
 });
+
