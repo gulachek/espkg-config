@@ -48,6 +48,22 @@ describe('pkg-config', () => {
 		);
 	}
 
+	async function expectStaticLibs(
+		names: string[],
+		libs: string[],
+	): Promise<void> {
+		const proof = await exe.staticLibs(names);
+		const actual = await pkg.staticLibs(names);
+		expect(libs).to.deep.equal(
+			proof,
+			'The given static libs did not match the reference pkg-config behavior',
+		);
+		expect(actual).to.deep.equal(
+			libs,
+			'The PkgConfig implementation did not match the expected static libs',
+		);
+	}
+
 	describe('cflags', () => {
 		async function expectFailure(
 			names: string[],
@@ -605,6 +621,55 @@ describe('pkg-config', () => {
 			);
 		});
 	});
+
+	describe('staticLibs', () => {
+		async function expectFailure(
+			names: string[],
+			msgs: ErrorMatch,
+		): Promise<void> {
+			let exeFail = true,
+				pkgFail = true;
+
+			const { ref, self } = errMatchers(msgs);
+
+			try {
+				await exe.staticLibs(names);
+				exeFail = false;
+			} catch (ex) {
+				expect(ex.message).to.match(
+					ref,
+					`Reference pkg-config behavior did not exit with expected error. Text:\n${ex.message}`,
+				);
+			}
+
+			try {
+				await pkg.staticLibs(names);
+				pkgFail = false;
+			} catch (ex) {
+				expect(ex.message).to.match(
+					self,
+					`PkgConfig implementation did not throw expected error. Text:\n${ex.message}`,
+				);
+			}
+
+			expect(
+				exeFail,
+				'Expected reference pkg-config behavior to exit with an error, but it exited successfully.',
+			).to.be.true;
+
+			expect(
+				pkgFail,
+				'Expected PkgConfig implementation to throw, but returned successfully.',
+			).to.be.true;
+		}
+
+		it('returns the parsed Libs flags', async () => {
+			await expectStaticLibs(
+				['libs-abc'],
+				['-L/usr/local/lib', '-labc', '-lprivate'],
+			);
+		});
+	});
 });
 
 class PkgExe {
@@ -630,6 +695,11 @@ class PkgExe {
 
 	async libs(names: string[]): Promise<string[]> {
 		const pkgOut = await this.spawn(['--libs', ...names]);
+		return shellSplitWords(pkgOut);
+	}
+
+	async staticLibs(names: string[]): Promise<string[]> {
+		const pkgOut = await this.spawn(['--libs', '--static', ...names]);
 		return shellSplitWords(pkgOut);
 	}
 }

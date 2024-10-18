@@ -72,8 +72,9 @@ export class PkgConfig {
 		const packages = await this.loadPackages(moduleList);
 		const result: string[] = [];
 
+		// TODO test LIBS_L inPathOrder
 		result.push(
-			...this.getMultiMerged(packages, 'libs', FlagType.LIBS_L, false, false),
+			...this.getMultiMerged(packages, 'libs', FlagType.LIBS_L, true, false),
 		);
 
 		const lFlags = FlagType.LIBS_OTHER | FlagType.LIBS_l;
@@ -82,9 +83,31 @@ export class PkgConfig {
 		return result;
 	}
 
+	async staticLibs(moduleList: string[]): Promise<string[]> {
+		const packages = await this.loadPackages(moduleList);
+		const result: string[] = [];
+
+		result.push(
+			...this.getMultiMerged(
+				packages,
+				'privateLibs',
+				FlagType.LIBS_L,
+				true,
+				true,
+			),
+		);
+
+		const lFlags = FlagType.LIBS_OTHER | FlagType.LIBS_l;
+		result.push(
+			...this.getMultiMerged(packages, 'privateLibs', lFlags, false, true),
+		);
+
+		return result;
+	}
+
 	private getMultiMerged(
 		packages: Package[],
-		keyProp: 'cflags' | 'libs',
+		keyProp: 'cflags' | 'libs' | 'privateLibs',
 		flagType: FlagType,
 		inPathOrder: boolean,
 		includePrivate: boolean,
@@ -252,7 +275,9 @@ class Package {
 	public vars = new Map<string, string>();
 	public cflags: Flag[] = [];
 	public libs: Flag[] = [];
+	public privateLibs: Flag[] = [];
 	private hasLibs = false;
+	private hasPrivateLibs = false;
 	public pathPosition: number = 0;
 	public name?: string;
 	public version?: string;
@@ -340,7 +365,7 @@ class Package {
 					this.parseRequires(rest, path);
 					break;
 				case 'Libs.private':
-					// TODO
+					this.parseLibsPrivate(rest, path);
 					break;
 				case 'Libs':
 					this.parseLibs(rest, path);
@@ -389,32 +414,55 @@ class Package {
 				`Couldn't parse Libs field into an argument vector: ${error}`,
 			);
 
-		this.doParseLibs(argv);
+		this.libs = this.doParseLibs(argv);
+		this.privateLibs.push(...this.libs);
 	}
 
-	private doParseLibs(argv: string[]): void {
+	private parseLibsPrivate(str: string, path: string): void {
+		if (this.hasPrivateLibs) {
+			throw new Error(`Libs.private field occurs multiple times in '${path}'`);
+		}
+
+		this.hasPrivateLibs = true;
+		const trimmed = this.trimAndSub(str, path);
+		if (!trimmed) return;
+
+		const { error, argv } = gShellParseArgv(trimmed);
+		if (error)
+			throw new Error(
+				`Couldn't parse Libs.private field into an argument vector: ${error}`,
+			);
+
+		this.privateLibs.push(...this.doParseLibs(argv));
+	}
+
+	private doParseLibs(argv: string[]): Flag[] {
+		const libs: Flag[] = [];
+
 		// TODO msvc syntax?
 		for (let i = 0; i < argv.length; ++i) {
 			const arg = argv[i].trim();
 
 			if (arg.startsWith('-l') && !arg.startsWith('-lib:')) {
 				const flag = new Flag(FlagType.LIBS_l, [arg]);
-				this.libs.push(flag);
+				libs.push(flag);
 			} else if (arg.startsWith('-L')) {
 				const flag = new Flag(FlagType.LIBS_L, [arg]);
-				this.libs.push(flag);
+				libs.push(flag);
 			} else if (
 				(arg === '-framework' || arg === '-Wl,-framework') &&
 				i + 1 < argv.length
 			) {
 				const framework = argv[i + 1].trim();
 				const flag = new Flag(FlagType.LIBS_OTHER, [arg, framework]);
-				this.libs.push(flag);
+				libs.push(flag);
 				i++;
 			} else if (arg) {
-				this.libs.push(new Flag(FlagType.LIBS_OTHER, [arg]));
+				libs.push(new Flag(FlagType.LIBS_OTHER, [arg]));
 			}
 		}
+
+		return libs;
 	}
 
 	private parseCflags(str: string, path: string): void {
