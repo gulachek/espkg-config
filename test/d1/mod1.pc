@@ -2,3 +2,4 @@ Name: mod1
 Version: 1.2.3
 Description: This is a pc file in test/d1
 Cflags: --other1 --another1 -Iinclude/d1 -isystem s1
+Libs: -Llib/d1 -l1

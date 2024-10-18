@@ -2,3 +2,4 @@ Name: mod2
 Version: 2.2.3
 Description: This is a pc file in test/d2
 Cflags: --other2 --another2 -Iinclude/d2 -isystem s2
+Libs: -Llib/d2 -l2

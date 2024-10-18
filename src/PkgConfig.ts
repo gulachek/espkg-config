@@ -68,7 +68,6 @@ export class PkgConfig {
 		const packages = await this.loadPackages(moduleList);
 		const result: string[] = [];
 
-		// TODO test LIBS_L inPathOrder
 		result.push(
 			...this.getMultiMerged(packages, 'libs', FlagType.LIBS_L, true, false),
 		);

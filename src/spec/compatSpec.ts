@@ -594,6 +594,13 @@ describe('pkg-config', () => {
 			);
 		});
 
+		it('sorts -L in path order', async () => {
+			await expectLibs(
+				['mod2', 'mod1'],
+				['-Llib/d1', '-Llib/d2', '-l2', '-l1'],
+			);
+		});
+
 		it('preserves ws in -l and -L', async () => {
 			/* It looks like pkg-config tries to not do this, but the
 			 * logic that's supposed to normalize the space right away comes
@@ -688,6 +695,27 @@ describe('pkg-config', () => {
 			await expectFailure(
 				['bad-libs-private-open-quote'],
 				/Couldn't parse Libs.private field into an argument vector: Text ended before matching quote was found for '/,
+			);
+		});
+
+		it('sorts -L in path order', async () => {
+			await expectStaticLibs(
+				['mod2', 'mod1'],
+				['-Llib/d1', '-Llib/d2', '-l2', '-l1'],
+			);
+		});
+
+		it('includes link flags from private requirements', async () => {
+			await expectStaticLibs(
+				['req-pubpriv'],
+				[
+					'-L/lib/pubpriv',
+					'-L/lib/private',
+					'-L/lib/public',
+					'-lreq',
+					'-lprivate',
+					'-lpublic',
+				],
 			);
 		});
 	});
