@@ -6,10 +6,10 @@ import { CharPtr } from './CharPtr';
 /** The pkg-config version we're mimicking */
 const SIMULATED_VERSION = '0.29.2';
 
-export class PkgResult {
+export type PkgResult = {
 	flags: string[];
 	files: string[];
-}
+};
 
 export class PkgConfig {
 	private searchPaths: string[];
