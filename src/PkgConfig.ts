@@ -6,6 +6,11 @@ import { CharPtr } from './CharPtr';
 /** The pkg-config version we're mimicking */
 const SIMULATED_VERSION = '0.29.2';
 
+export class PkgResult {
+	flags: string[];
+	files: string[];
+}
+
 export class PkgConfig {
 	private searchPaths: string[];
 	private disableUninstalled = false;
@@ -14,7 +19,9 @@ export class PkgConfig {
 		this.searchPaths = [...opts.searchPaths];
 	}
 
-	private async loadPackages(moduleList: string[]): Promise<Package[]> {
+	private async loadPackages(
+		moduleList: string[],
+	): Promise<{ packages: Package[]; files: string[] }> {
 		const globalState = new GlobalState();
 		const packages: Package[] = [];
 		const reqs = moduleList.map((m) => RequiredVersion.fromUserArg(m));
@@ -35,14 +42,14 @@ export class PkgConfig {
 			packages.push(pkg);
 		}
 
-		return packages;
+		return { packages, files: globalState.loadedFiles() };
 	}
 
-	async cflags(moduleList: string[]): Promise<string[]> {
-		const packages = await this.loadPackages(moduleList);
-		const result: string[] = [];
+	async cflags(moduleList: string[]): Promise<PkgResult> {
+		const { packages, files } = await this.loadPackages(moduleList);
+		const flags: string[] = [];
 
-		result.push(
+		flags.push(
 			...this.getMultiMerged(
 				packages,
 				'cflags',
@@ -51,32 +58,32 @@ export class PkgConfig {
 				true,
 			),
 		);
-		result.push(
+		flags.push(
 			...this.getMultiMerged(packages, 'cflags', FlagType.CFLAGS_I, true, true),
 		);
 
-		return result;
+		return { flags, files };
 	}
 
-	async libs(moduleList: string[]): Promise<string[]> {
-		const packages = await this.loadPackages(moduleList);
-		const result: string[] = [];
+	async libs(moduleList: string[]): Promise<PkgResult> {
+		const { packages, files } = await this.loadPackages(moduleList);
+		const flags: string[] = [];
 
-		result.push(
+		flags.push(
 			...this.getMultiMerged(packages, 'libs', FlagType.LIBS_L, true, false),
 		);
 
 		const lFlags = FlagType.LIBS_OTHER | FlagType.LIBS_l;
-		result.push(...this.getMultiMerged(packages, 'libs', lFlags, false, false));
+		flags.push(...this.getMultiMerged(packages, 'libs', lFlags, false, false));
 
-		return result;
+		return { flags, files };
 	}
 
-	async staticLibs(moduleList: string[]): Promise<string[]> {
-		const packages = await this.loadPackages(moduleList);
-		const result: string[] = [];
+	async staticLibs(moduleList: string[]): Promise<PkgResult> {
+		const { packages, files } = await this.loadPackages(moduleList);
+		const flags: string[] = [];
 
-		result.push(
+		flags.push(
 			...this.getMultiMerged(
 				packages,
 				'privateLibs',
@@ -87,11 +94,11 @@ export class PkgConfig {
 		);
 
 		const lFlags = FlagType.LIBS_OTHER | FlagType.LIBS_l;
-		result.push(
+		flags.push(
 			...this.getMultiMerged(packages, 'privateLibs', lFlags, false, true),
 		);
 
-		return result;
+		return { flags, files };
 	}
 
 	private getMultiMerged(
@@ -258,8 +265,8 @@ export class PkgConfig {
 	): Promise<Package | null> {
 		const pkg = new Package(key, globalState);
 
-		pkg.pcFileDir = dirname(path);
-		pkg.vars.set('pcfiledir', pkg.pcFileDir);
+		pkg.pcFile = path;
+		pkg.vars.set('pcfiledir', dirname(pkg.pcFile));
 
 		const file = new FileStream(path);
 		await file.load();
@@ -275,7 +282,7 @@ export class PkgConfig {
 class Package {
 	public key: string;
 	public uninstalled: boolean;
-	public pcFileDir: string;
+	public pcFile?: string;
 	public vars = new Map<string, string>();
 	public cflags: Flag[] = [];
 	public libs: Flag[] = [];
@@ -1079,5 +1086,15 @@ class GlobalState {
 
 	public getVar(name: string): string | null {
 		return this.vars.get(name) || null;
+	}
+
+	public loadedFiles(): string[] {
+		const files: string[] = [];
+
+		for (const [_, pkg] of this.packages) {
+			pkg.pcFile && files.push(pkg.pcFile);
+		}
+
+		return files;
 	}
 }

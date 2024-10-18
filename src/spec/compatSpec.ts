@@ -28,7 +28,7 @@ describe('pkg-config', () => {
 		cflags: string[],
 	): Promise<void> {
 		const proof = await exe.cflags(names);
-		const actual = await pkg.cflags(names);
+		const { flags: actual } = await pkg.cflags(names);
 		expect(cflags).to.deep.equal(
 			proof,
 			'The given cflags did not match the reference pkg-config behavior',
@@ -41,7 +41,7 @@ describe('pkg-config', () => {
 
 	async function expectLibs(names: string[], libs: string[]): Promise<void> {
 		const proof = await exe.libs(names);
-		const actual = await pkg.libs(names);
+		const { flags: actual } = await pkg.libs(names);
 		expect(libs).to.deep.equal(
 			proof,
 			'The given libs did not match the reference pkg-config behavior',
@@ -57,7 +57,7 @@ describe('pkg-config', () => {
 		libs: string[],
 	): Promise<void> {
 		const proof = await exe.staticLibs(names);
-		const actual = await pkg.staticLibs(names);
+		const { flags: actual } = await pkg.staticLibs(names);
 		expect(libs).to.deep.equal(
 			proof,
 			'The given static libs did not match the reference pkg-config behavior',
@@ -168,15 +168,22 @@ describe('pkg-config', () => {
 			await using t = await DynamicTest.init();
 			const pcFile = join(t.d, 'cflags-dynamic.pc');
 
-			const pkg = new PkgConfig({ searchPaths: [t.d] });
-
 			await writeFile(pcFile, `${preamble}Cflags: --hello`);
-			let cflags = await pkg.cflags(['cflags-dynamic']);
+			let { flags: cflags } = await pkg.cflags(['cflags-dynamic']);
 			expect(cflags).to.deep.equal(['--hello']);
 
 			await writeFile(pcFile, `${preamble}Cflags: --world`);
-			cflags = await pkg.cflags(['cflags-dynamic']);
+			cflags = (await pkg.cflags(['cflags-dynamic'])).flags;
 			expect(cflags).to.deep.equal(['--world']);
+		});
+
+		it('returns the files that were loaded', async () => {
+			const { files } = await pkg.cflags(['req-pubpriv']);
+			const f = new Set(files);
+			expect(f.has(resolve('test/req-pubpriv.pc'))).to.be.true;
+			expect(f.has(resolve('test/public.pc'))).to.be.true;
+			expect(f.has(resolve('test/private.pc'))).to.be.true;
+			expect(f.size).to.equal(3);
 		});
 
 		describe('version operators', () => {
@@ -653,15 +660,22 @@ describe('pkg-config', () => {
 			await using t = await DynamicTest.init();
 			const pcFile = join(t.d, 'libs-dynamic.pc');
 
-			const pkg = new PkgConfig({ searchPaths: [t.d] });
-
 			await writeFile(pcFile, `${preamble}Libs: --hello`);
-			let libs = await pkg.libs(['libs-dynamic']);
+			let { flags: libs } = await pkg.libs(['libs-dynamic']);
 			expect(libs).to.deep.equal(['--hello']);
 
 			await writeFile(pcFile, `${preamble}Libs: --world`);
-			libs = await pkg.libs(['libs-dynamic']);
+			libs = (await pkg.libs(['libs-dynamic'])).flags;
 			expect(libs).to.deep.equal(['--world']);
+		});
+
+		it('returns the files that were loaded', async () => {
+			const { files } = await pkg.libs(['req-pubpriv']);
+			const f = new Set(files);
+			expect(f.has(resolve('test/req-pubpriv.pc'))).to.be.true;
+			expect(f.has(resolve('test/public.pc'))).to.be.true;
+			expect(f.has(resolve('test/private.pc'))).to.be.true;
+			expect(f.size).to.equal(3);
 		});
 	});
 
@@ -760,15 +774,22 @@ describe('pkg-config', () => {
 			await using t = await DynamicTest.init();
 			const pcFile = join(t.d, 'libs-dynamic.pc');
 
-			const pkg = new PkgConfig({ searchPaths: [t.d] });
-
 			await writeFile(pcFile, `${preamble}Libs.private: --hello`);
-			let libs = await pkg.staticLibs(['libs-dynamic']);
+			let { flags: libs } = await pkg.staticLibs(['libs-dynamic']);
 			expect(libs).to.deep.equal(['--hello']);
 
 			await writeFile(pcFile, `${preamble}Libs.private: --world`);
-			libs = await pkg.staticLibs(['libs-dynamic']);
+			libs = (await pkg.staticLibs(['libs-dynamic'])).flags;
 			expect(libs).to.deep.equal(['--world']);
+		});
+
+		it('returns the files that were loaded', async () => {
+			const { files } = await pkg.staticLibs(['req-pubpriv']);
+			const f = new Set(files);
+			expect(f.has(resolve('test/req-pubpriv.pc'))).to.be.true;
+			expect(f.has(resolve('test/public.pc'))).to.be.true;
+			expect(f.has(resolve('test/private.pc'))).to.be.true;
+			expect(f.size).to.equal(3);
 		});
 	});
 });
