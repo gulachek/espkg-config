@@ -125,6 +125,24 @@ describe('pkg-config', () => {
 			);
 		});
 
+		it('can require versions from given arguments', async () => {
+			await expectCflags(['cflags-abc = 1.2.3'], ['-a', '-b', '-c']);
+		});
+
+		it('fails if the given module version is not matched', async () => {
+			await expectFailure(
+				['cflags-abc < 1.2.3'],
+				/Requested 'cflags-abc < 1.2.3' but version of cflags-abc is 1.2.3/,
+			);
+		});
+
+		it('does not escape spaces in module names', async () => {
+			await expectFailure(
+				['cflags-abc\\ = 1.2.3'],
+				/Package "?cflags-abc\\"? was not found/,
+			);
+		});
+
 		describe('version operators', () => {
 			const flags = ['-DPUBLIC', '-I/include/public'];
 
@@ -539,6 +557,10 @@ describe('pkg-config', () => {
 				['req-pubpriv'],
 				['-L/lib/pubpriv', '-L/lib/public', '-lreq', '-lpublic'],
 			);
+		});
+
+		it('can require versions from given arguments', async () => {
+			await expectLibs(['libs-abc = 1.2.3'], ['-L/usr/local/lib', '-labc']);
 		});
 
 		it('sorts -L flags before -l and -framework', async () => {

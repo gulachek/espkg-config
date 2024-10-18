@@ -14,7 +14,6 @@ export class PkgConfig {
 
 	/** @todo
 	 * libs private
-	 * module versions in names
 	 */
 
 	public constructor(opts: { searchPaths: string[] }) {
@@ -30,16 +29,27 @@ export class PkgConfig {
 		this.packages.set(pkgKey, pkg);
 	}
 
-	async cflags(moduleList: string[]): Promise<string[]> {
+	private async loadPackages(moduleList: string[]): Promise<Package[]> {
 		const packages: Package[] = [];
+		const reqs = moduleList.map((m) => RequiredVersion.fromUserArg(m));
 
-		for (const name of moduleList) {
-			const req = await this.getPackage(name, true);
+		for (const req of reqs) {
+			const pkg = await this.getPackage(req.name, true);
 
-			// TODO version test
-			packages.push(req);
+			if (!req.test(pkg.version)) {
+				throw new Error(
+					`Requested '${req.toString()}' but version of ${pkg.name} is ${pkg.version}`,
+				);
+			}
+
+			packages.push(pkg);
 		}
 
+		return packages;
+	}
+
+	async cflags(moduleList: string[]): Promise<string[]> {
+		const packages = await this.loadPackages(moduleList);
 		const result: string[] = [];
 
 		result.push(
@@ -59,15 +69,7 @@ export class PkgConfig {
 	}
 
 	async libs(moduleList: string[]): Promise<string[]> {
-		const packages: Package[] = [];
-
-		for (const name of moduleList) {
-			const req = await this.getPackage(name, true);
-
-			// TODO version test
-			packages.push(req);
-		}
-
+		const packages = await this.loadPackages(moduleList);
 		const result: string[] = [];
 
 		result.push(
@@ -458,103 +460,14 @@ class Package {
 		// TODO handle dup Requires field
 
 		const trimmed = this.trimAndSub(str, path);
-		this.requiresEntries = this.parseModuleList(trimmed, path);
+		this.requiresEntries = parseModuleList(trimmed, path);
 	}
 
 	private parseRequiresPrivate(str: string, path: string): void {
 		// TODO handle dup Requires.private field
 
 		const trimmed = this.trimAndSub(str, path);
-		this.requiresPrivateEntries = this.parseModuleList(trimmed, path);
-	}
-
-	private parseModuleList(str: string, path: string): RequiredVersion[] {
-		const split = splitModuleList(str);
-		const retval: RequiredVersion[] = [];
-
-		for (const iter of split) {
-			const p = new CharPtr(iter);
-			const ver = new RequiredVersion();
-			ver.comparison = ComparisonType.ALWAYS_MATCH;
-			ver.owner = this;
-			retval.push(ver);
-
-			while (p.deref() && isModuleSeparator(p.deref())) p.advance();
-
-			let start = p.dup();
-
-			while (p.deref() && !isSpace(p.deref())) p.advance();
-
-			while (p.deref() && isModuleSeparator(p.deref())) {
-				p.setChar('\0');
-				p.advance();
-			}
-
-			if (!start.deref()) {
-				throw new Error(
-					`Empty package name in Requires or Conflicts in file '${path}'`,
-				);
-			}
-
-			ver.name = start.toString();
-			start = p.dup();
-
-			while (p.deref() && !isSpace(p.deref())) p.advance();
-
-			while (p.deref() && isSpace(p.deref())) {
-				p.setChar('\0');
-				p.advance();
-			}
-
-			if (start.deref()) {
-				switch (start.toString()) {
-					case '=':
-						ver.comparison = ComparisonType.EQUAL;
-						break;
-					case '>=':
-						ver.comparison = ComparisonType.GREATER_THAN_EQUAL;
-						break;
-					case '<=':
-						ver.comparison = ComparisonType.LESS_THAN_EQUAL;
-						break;
-					case '>':
-						ver.comparison = ComparisonType.GREATER_THAN;
-						break;
-					case '<':
-						ver.comparison = ComparisonType.LESS_THAN;
-						break;
-					case '!=':
-						ver.comparison = ComparisonType.NOT_EQUAL;
-						break;
-					default:
-						throw new Error(
-							`Unknown version comparison operator '${start.toString()}' after package name '${ver.name}' in file '${path}'`,
-						);
-				}
-			}
-
-			start = p.dup();
-
-			while (p.deref() && !isModuleSeparator(p.deref())) p.advance();
-
-			while (p.deref() && isModuleSeparator(p.deref())) {
-				p.setChar('\0');
-				p.advance();
-			}
-
-			if (ver.comparison !== ComparisonType.ALWAYS_MATCH && !start.deref()) {
-				throw new Error(
-					`Comparison operator but no version after package name '${ver.name}' in file '${path}'`,
-				);
-			}
-
-			if (start.deref()) ver.version = start.toString();
-
-			/* istanbul ignore next */
-			if (!ver.name) assertNotReached();
-		}
-
-		return retval;
+		this.requiresPrivateEntries = parseModuleList(trimmed, path);
 	}
 
 	private trimAndSub(str: string, path: string): string {
@@ -743,6 +656,94 @@ function isOperatorChar(c: string): boolean {
 	}
 }
 
+function parseModuleList(str: string, path: string): RequiredVersion[] {
+	const split = splitModuleList(str);
+	const retval: RequiredVersion[] = [];
+
+	for (const iter of split) {
+		const p = new CharPtr(iter);
+		const ver = new RequiredVersion();
+		ver.comparison = ComparisonType.ALWAYS_MATCH;
+		ver.owner = this;
+		retval.push(ver);
+
+		while (p.deref() && isModuleSeparator(p.deref())) p.advance();
+
+		let start = p.dup();
+
+		while (p.deref() && !isSpace(p.deref())) p.advance();
+
+		while (p.deref() && isModuleSeparator(p.deref())) {
+			p.setChar('\0');
+			p.advance();
+		}
+
+		if (!start.deref()) {
+			throw new Error(
+				`Empty package name in Requires or Conflicts in file '${path}'`,
+			);
+		}
+
+		ver.name = start.toString();
+		start = p.dup();
+
+		while (p.deref() && !isSpace(p.deref())) p.advance();
+
+		while (p.deref() && isSpace(p.deref())) {
+			p.setChar('\0');
+			p.advance();
+		}
+
+		if (start.deref()) {
+			switch (start.toString()) {
+				case '=':
+					ver.comparison = ComparisonType.EQUAL;
+					break;
+				case '>=':
+					ver.comparison = ComparisonType.GREATER_THAN_EQUAL;
+					break;
+				case '<=':
+					ver.comparison = ComparisonType.LESS_THAN_EQUAL;
+					break;
+				case '>':
+					ver.comparison = ComparisonType.GREATER_THAN;
+					break;
+				case '<':
+					ver.comparison = ComparisonType.LESS_THAN;
+					break;
+				case '!=':
+					ver.comparison = ComparisonType.NOT_EQUAL;
+					break;
+				default:
+					throw new Error(
+						`Unknown version comparison operator '${start.toString()}' after package name '${ver.name}' in file '${path}'`,
+					);
+			}
+		}
+
+		start = p.dup();
+
+		while (p.deref() && !isModuleSeparator(p.deref())) p.advance();
+
+		while (p.deref() && isModuleSeparator(p.deref())) {
+			p.setChar('\0');
+			p.advance();
+		}
+
+		if (ver.comparison !== ComparisonType.ALWAYS_MATCH && !start.deref()) {
+			throw new Error(
+				`Comparison operator but no version after package name '${ver.name}' in file '${path}'`,
+			);
+		}
+
+		if (start.deref()) ver.version = start.toString();
+
+		/* istanbul ignore next */
+		if (!ver.name) assertNotReached();
+	}
+
+	return retval;
+}
 function splitModuleList(str: string): string[] {
 	const retval: string[] = [];
 	let state = ModuleSplitState.OUTSIDE_MODULE;
@@ -910,11 +911,69 @@ export function rpmVerCmp(a: string, b: string): number {
 	return 1;
 }
 
-class RequiredVersion {
+export class RequiredVersion {
 	public name: string;
 	public comparison: ComparisonType;
 	public version: string;
 	public owner?: Package;
+
+	private static parseErr(arg: unknown, msg: string): never {
+		throw new Error(`Error parsing package requirement from '${arg}': ${msg}`);
+	}
+
+	public static fromUserArg(arg: unknown): RequiredVersion {
+		if (typeof arg !== 'string') {
+			this.parseErr(arg, 'Package name is not a string');
+		}
+
+		const pieces = arg.trim().split(/\s+/);
+		if (pieces.length < 1 || !pieces[0]) {
+			this.parseErr(arg, 'No package name found');
+		}
+
+		const req = new RequiredVersion();
+		req.name = pieces[0];
+
+		if (pieces.length === 1) {
+			req.comparison = ComparisonType.ALWAYS_MATCH;
+			req.version = '';
+			return req;
+		}
+
+		const op = pieces[1];
+		switch (op) {
+			case '=':
+				req.comparison = ComparisonType.EQUAL;
+				break;
+			case '>=':
+				req.comparison = ComparisonType.GREATER_THAN_EQUAL;
+				break;
+			case '<=':
+				req.comparison = ComparisonType.LESS_THAN_EQUAL;
+				break;
+			case '>':
+				req.comparison = ComparisonType.GREATER_THAN;
+				break;
+			case '<':
+				req.comparison = ComparisonType.LESS_THAN;
+				break;
+			case '!=':
+				req.comparison = ComparisonType.NOT_EQUAL;
+				break;
+			default:
+				this.parseErr(arg, `Invalid comparison operator '${op}'`);
+		}
+
+		if (pieces.length != 3) {
+			this.parseErr(
+				arg,
+				`Expected format <name> [<op> <version>] but given string has ${pieces.length} tokens`,
+			);
+		}
+
+		req.version = pieces[2];
+		return req;
+	}
 
 	public test(version: string): boolean {
 		const rc = rpmVerCmp(version, this.version);
