@@ -1,0 +1,8 @@
+prefix = /usr/local
+
+Name: libs-cba
+Version: 1.2.3
+Description: Demonstrates putting Libs.private before Libs
+
+Libs.private: -lprivate
+Libs: -L${prefix}/lib -labc

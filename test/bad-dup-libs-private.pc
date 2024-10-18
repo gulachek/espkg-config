@@ -1,0 +1,6 @@
+Name:
+Version:
+Description:
+
+Libs.private:
+Libs.private: -lprivate

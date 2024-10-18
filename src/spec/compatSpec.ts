@@ -669,6 +669,27 @@ describe('pkg-config', () => {
 				['-L/usr/local/lib', '-labc', '-lprivate'],
 			);
 		});
+
+		it("returns the private libs first if they're defined first", async () => {
+			await expectStaticLibs(
+				['libs-cba'],
+				['-L/usr/local/lib', '-lprivate', '-labc'],
+			);
+		});
+
+		it('fails if Libs.private is defined multiple times', async () => {
+			await expectFailure(
+				['bad-dup-libs-private'],
+				/Libs.private field occurs (twice|multiple times) in '.*bad-dup-libs-private.pc'/,
+			);
+		});
+
+		it("fails if quote isn't terminated", async () => {
+			await expectFailure(
+				['bad-libs-private-open-quote'],
+				/Couldn't parse Libs.private field into an argument vector: Text ended before matching quote was found for '/,
+			);
+		});
 	});
 });
 

@@ -12,10 +12,6 @@ export class PkgConfig {
 	private disableUninstalled = false;
 	private globals = new Map<string, string>();
 
-	/** @todo
-	 * libs private
-	 */
-
 	public constructor(opts: { searchPaths: string[] }) {
 		this.searchPaths = [...opts.searchPaths];
 		this.packages = new Map<string, Package>();
