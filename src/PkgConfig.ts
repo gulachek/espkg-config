@@ -8,29 +8,23 @@ const SIMULATED_VERSION = '0.29.2';
 
 export class PkgConfig {
 	private searchPaths: string[];
-	private packages: Map<string, Package>;
 	private disableUninstalled = false;
-	private globals = new Map<string, string>();
 
 	public constructor(opts: { searchPaths: string[] }) {
 		this.searchPaths = [...opts.searchPaths];
-		this.packages = new Map<string, Package>();
-
-		const pkgKey = 'pkg-config';
-		const pkg = new Package(pkgKey, this.globals);
-		pkg.name = pkgKey;
-		pkg.version = SIMULATED_VERSION;
-		pkg.description = `pkg-config is a system for managing compile/link flags for libraries`;
-		pkg.url = 'http://pkg-config.freedesktop.org/';
-		this.packages.set(pkgKey, pkg);
 	}
 
 	private async loadPackages(moduleList: string[]): Promise<Package[]> {
+		const globalState = new GlobalState();
 		const packages: Package[] = [];
 		const reqs = moduleList.map((m) => RequiredVersion.fromUserArg(m));
 
 		for (const req of reqs) {
-			const pkg = await this.getPackage(req.name, true);
+			const pkg = await this.getPackage({
+				name: req.name,
+				mustExist: true,
+				globalState,
+			});
 
 			if (!req.test(pkg.version)) {
 				throw new Error(
@@ -160,11 +154,13 @@ export class PkgConfig {
 		expanded.unshift(pkg);
 	}
 
-	private async getPackage(
-		name: string,
-		mustExist: boolean,
-	): Promise<Package | null> {
-		let pkg: Package | null = this.packages.get(name);
+	private async getPackage(opts: {
+		name: string;
+		mustExist: boolean;
+		globalState: GlobalState;
+	}): Promise<Package | null> {
+		const { name, mustExist, globalState } = opts;
+		let pkg = globalState.getLoadedPackage(name);
 		if (pkg) return pkg;
 
 		let location: string | null = null;
@@ -180,7 +176,11 @@ export class PkgConfig {
 			const uninstalled = '-uninstalled';
 
 			if (!this.disableUninstalled && !name.endsWith(uninstalled)) {
-				const un = await this.getPackage(name + uninstalled, false);
+				const un = await this.getPackage({
+					name: name + uninstalled,
+					mustExist: false,
+					globalState,
+				});
 
 				if (un) return un;
 			}
@@ -204,16 +204,20 @@ export class PkgConfig {
 			return null;
 		}
 
-		pkg = await this.parsePackageFile(key, location);
+		pkg = await this.parsePackageFile(key, location, globalState);
 
 		//if (!pkg) return null;
 
 		if (location.includes('uninstalled.pc')) pkg.uninstalled = true;
 		pkg.pathPosition = pathPosition;
-		this.packages.set(key, pkg);
+		globalState.cachePackage(pkg);
 
 		for (const ver of pkg.requiresEntries) {
-			const req = await this.getPackage(ver.name, false);
+			const req = await this.getPackage({
+				name: ver.name,
+				mustExist: false,
+				globalState,
+			});
 			if (!req) {
 				throw new Error(
 					`Package '${ver.name}', required by '${pkg.key}', not found`,
@@ -225,7 +229,11 @@ export class PkgConfig {
 		}
 
 		for (const ver of pkg.requiresPrivateEntries) {
-			const req = await this.getPackage(ver.name, false);
+			const req = await this.getPackage({
+				name: ver.name,
+				mustExist: false,
+				globalState,
+			});
 			if (!req) {
 				throw new Error(
 					`Package '${ver.name}', required by '${pkg.key}', not found`,
@@ -246,8 +254,9 @@ export class PkgConfig {
 	private async parsePackageFile(
 		key: string,
 		path: string,
+		globalState: GlobalState,
 	): Promise<Package | null> {
-		const pkg = new Package(key, this.globals);
+		const pkg = new Package(key, globalState);
 
 		pkg.pcFileDir = dirname(path);
 		pkg.vars.set('pcfiledir', pkg.pcFileDir);
@@ -277,7 +286,7 @@ class Package {
 	public name?: string;
 	public version?: string;
 	public description?: string;
-	private globals: Map<string, string>;
+	private globalState: WeakRef<GlobalState>;
 	public requiresEntries: RequiredVersion[] = [];
 	public requiresPrivateEntries: RequiredVersion[] = [];
 	public requiredVersions = new Map<string, RequiredVersion>();
@@ -285,9 +294,9 @@ class Package {
 	public requiresPrivate: Package[] = [];
 	public url?: string;
 
-	constructor(key: string, globals: Map<string, string>) {
+	constructor(key: string, globalState: GlobalState) {
 		this.key = key;
-		this.globals = globals;
+		this.globalState = new WeakRef(globalState);
 	}
 
 	public verify(): void {
@@ -549,7 +558,7 @@ class Package {
 	}
 
 	private getVar(varName: string): string | undefined {
-		const varval = this.globals.get(varName);
+		const varval = this.globalState.deref()?.getVar(varName);
 
 		// no feature to override variables. can be requested
 
@@ -1043,5 +1052,32 @@ export class RequiredVersion {
 
 	public toString(): string {
 		return `${this.name} ${this.comparison} ${this.version}`;
+	}
+}
+
+class GlobalState {
+	private packages = new Map<string, Package>();
+	private vars = new Map<string, string>();
+
+	constructor() {
+		const pkgKey = 'pkg-config';
+		const pkg = new Package(pkgKey, this);
+		pkg.name = pkgKey;
+		pkg.version = SIMULATED_VERSION;
+		pkg.description = `pkg-config is a system for managing compile/link flags for libraries`;
+		pkg.url = 'http://pkg-config.freedesktop.org/';
+		this.packages.set(pkgKey, pkg);
+	}
+
+	public getLoadedPackage(key: string): Package | null {
+		return this.packages.get(key) || null;
+	}
+
+	public cachePackage(pkg: Package): void {
+		this.packages.set(pkg.key, pkg);
+	}
+
+	public getVar(name: string): string | null {
+		return this.vars.get(name) || null;
 	}
 }

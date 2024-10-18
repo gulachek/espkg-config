@@ -1,15 +1,19 @@
 import { expect } from 'chai';
-import { resolve, delimiter } from 'node:path';
+import { resolve, delimiter, join } from 'node:path';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { SpawnOptions, spawn } from 'node:child_process';
 import { Readable } from 'node:stream';
 import { PkgConfig } from '../index';
+
+const dynamicTestDir = resolve('test/.dynamic');
 
 describe('pkg-config', () => {
 	let exe: PkgExe;
 	let pkg: PkgConfig;
 
-	beforeEach(() => {
+	beforeEach(async () => {
 		const dirs = ['test', 'test/d1', 'test/d2'].map((s) => resolve(s));
+		dirs.push(dynamicTestDir);
 
 		exe = new PkgExe();
 		exe.searchPaths.push(...dirs);
@@ -157,6 +161,22 @@ describe('pkg-config', () => {
 				['cflags-abc\\ = 1.2.3'],
 				/Package "?cflags-abc\\"? was not found/,
 			);
+		});
+
+		it('picks up changes to test files', async () => {
+			const preamble = 'Name:\nVersion:\nDescription:\n';
+			await using t = await DynamicTest.init();
+			const pcFile = join(t.d, 'cflags-dynamic.pc');
+
+			const pkg = new PkgConfig({ searchPaths: [t.d] });
+
+			await writeFile(pcFile, `${preamble}Cflags: --hello`);
+			let cflags = await pkg.cflags(['cflags-dynamic']);
+			expect(cflags).to.deep.equal(['--hello']);
+
+			await writeFile(pcFile, `${preamble}Cflags: --world`);
+			cflags = await pkg.cflags(['cflags-dynamic']);
+			expect(cflags).to.deep.equal(['--world']);
 		});
 
 		describe('version operators', () => {
@@ -627,6 +647,22 @@ describe('pkg-config', () => {
 				/Couldn't parse Libs field into an argument vector: Text ended before matching quote was found for '/,
 			);
 		});
+
+		it('picks up changes to test files', async () => {
+			const preamble = 'Name:\nVersion:\nDescription:\n';
+			await using t = await DynamicTest.init();
+			const pcFile = join(t.d, 'libs-dynamic.pc');
+
+			const pkg = new PkgConfig({ searchPaths: [t.d] });
+
+			await writeFile(pcFile, `${preamble}Libs: --hello`);
+			let libs = await pkg.libs(['libs-dynamic']);
+			expect(libs).to.deep.equal(['--hello']);
+
+			await writeFile(pcFile, `${preamble}Libs: --world`);
+			libs = await pkg.libs(['libs-dynamic']);
+			expect(libs).to.deep.equal(['--world']);
+		});
 	});
 
 	describe('staticLibs', () => {
@@ -717,6 +753,22 @@ describe('pkg-config', () => {
 					'-lpublic',
 				],
 			);
+		});
+
+		it('picks up changes to test files', async () => {
+			const preamble = 'Name:\nVersion:\nDescription:\n';
+			await using t = await DynamicTest.init();
+			const pcFile = join(t.d, 'libs-dynamic.pc');
+
+			const pkg = new PkgConfig({ searchPaths: [t.d] });
+
+			await writeFile(pcFile, `${preamble}Libs.private: --hello`);
+			let libs = await pkg.staticLibs(['libs-dynamic']);
+			expect(libs).to.deep.equal(['--hello']);
+
+			await writeFile(pcFile, `${preamble}Libs.private: --world`);
+			libs = await pkg.staticLibs(['libs-dynamic']);
+			expect(libs).to.deep.equal(['--world']);
 		});
 	});
 });
@@ -835,4 +887,21 @@ function errMatchers(match: ErrorMatch): ErrorMatchObj {
 	if (isErrMatchObj(match)) return match;
 
 	return { ref: match, self: match };
+}
+
+class DynamicTest implements AsyncDisposable {
+	public static async init(): Promise<DynamicTest> {
+		await mkdir(dynamicTestDir);
+		return new DynamicTest();
+	}
+
+	constructor() {}
+
+	public get d(): string {
+		return dynamicTestDir;
+	}
+
+	public async [Symbol.asyncDispose](): Promise<void> {
+		await rm(this.d, { recursive: true });
+	}
 }
