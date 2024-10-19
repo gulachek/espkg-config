@@ -6,17 +6,118 @@ import { CharPtr } from './CharPtr';
 /** The pkg-config version we're mimicking */
 const SIMULATED_VERSION = '0.29.2';
 
+/** Return type of pkg-config flags calculations */
 export type PkgResult = {
+	/** Flags computed by pkg-config to pass to compiler/linker CLI arguments */
 	flags: string[];
+
+	/** Absolute paths of the .pc files that were loaded during the computation */
 	files: string[];
 };
 
+/** Options to configure the PkgConfig behavior */
+export type PkgOptions = {
+	/** Ordered list of directories to search for .pc files like `PKG_CONFIG_PATH` */
+	searchPaths: string[];
+};
+
+/**
+ * Top level object representing the pkg-config implementation
+ */
 export class PkgConfig {
 	private searchPaths: string[];
 	private disableUninstalled = false;
 
-	public constructor(opts: { searchPaths: string[] }) {
+	/** Construct the PkgConfig object */
+	public constructor(opts: PkgOptions) {
 		this.searchPaths = [...opts.searchPaths];
+	}
+
+	/**
+	 * Compute compiler flags for the given list of modules
+	 * @param moduleList The names of modules to compute flags for
+	 * @returns The flags necessary to compile against the given modules
+	 * @remarks The moduleList argument can accept versioned modules like 'foo = 1.2.3'
+	 */
+	public async cflags(moduleList: string[]): Promise<PkgResult> {
+		const globalState = new GlobalState();
+		const { packages, files } = await this.loadPackages(
+			moduleList,
+			globalState,
+		);
+		const flags: string[] = [];
+
+		flags.push(
+			...this.getMultiMerged(
+				packages,
+				'cflags',
+				FlagType.CFLAGS_OTHER,
+				false,
+				true,
+			),
+		);
+		flags.push(
+			...this.getMultiMerged(packages, 'cflags', FlagType.CFLAGS_I, true, true),
+		);
+
+		return { flags, files };
+	}
+
+	/**
+	 * Compute linker flags for the given list of modules
+	 * @param moduleList The names of modules to compute flags for
+	 * @returns The flags necessary to link against the given modules
+	 * @remarks The moduleList argument can accept versioned modules like 'foo = 1.2.3'
+	 */
+	public async libs(moduleList: string[]): Promise<PkgResult> {
+		const globalState = new GlobalState();
+		globalState.ignorePrivateReqs = true;
+		const { packages, files } = await this.loadPackages(
+			moduleList,
+			globalState,
+		);
+		const flags: string[] = [];
+
+		flags.push(
+			...this.getMultiMerged(packages, 'libs', FlagType.LIBS_L, true, false),
+		);
+
+		const lFlags = FlagType.LIBS_OTHER | FlagType.LIBS_l;
+		flags.push(...this.getMultiMerged(packages, 'libs', lFlags, false, false));
+
+		return { flags, files };
+	}
+
+	/**
+	 * Compute static linker flags for the given list of modules
+	 * @param moduleList The names of modules to compute flags for
+	 * @returns The flags necessary to statically link against the given modules
+	 * @remarks The moduleList argument can accept versioned modules like 'foo = 1.2.3'
+	 */
+	public async staticLibs(moduleList: string[]): Promise<PkgResult> {
+		const globalState = new GlobalState();
+		const { packages, files } = await this.loadPackages(
+			moduleList,
+			globalState,
+		);
+		const flags: string[] = [];
+
+		flags.push(
+			...this.getMultiMerged(
+				packages,
+				'privateLibs',
+				FlagType.LIBS_L,
+				true,
+				true,
+			),
+		);
+
+		const lFlags = FlagType.LIBS_OTHER | FlagType.LIBS_l;
+		flags.push(
+			...this.getMultiMerged(packages, 'privateLibs', lFlags, false, true),
+		);
+
+		return { flags, files };
 	}
 
 	private async loadPackages(
@@ -43,75 +144,6 @@ export class PkgConfig {
 		}
 
 		return { packages, files: globalState.loadedFiles() };
-	}
-
-	async cflags(moduleList: string[]): Promise<PkgResult> {
-		const globalState = new GlobalState();
-		const { packages, files } = await this.loadPackages(
-			moduleList,
-			globalState,
-		);
-		const flags: string[] = [];
-
-		flags.push(
-			...this.getMultiMerged(
-				packages,
-				'cflags',
-				FlagType.CFLAGS_OTHER,
-				false,
-				true,
-			),
-		);
-		flags.push(
-			...this.getMultiMerged(packages, 'cflags', FlagType.CFLAGS_I, true, true),
-		);
-
-		return { flags, files };
-	}
-
-	async libs(moduleList: string[]): Promise<PkgResult> {
-		const globalState = new GlobalState();
-		globalState.ignorePrivateReqs = true;
-		const { packages, files } = await this.loadPackages(
-			moduleList,
-			globalState,
-		);
-		const flags: string[] = [];
-
-		flags.push(
-			...this.getMultiMerged(packages, 'libs', FlagType.LIBS_L, true, false),
-		);
-
-		const lFlags = FlagType.LIBS_OTHER | FlagType.LIBS_l;
-		flags.push(...this.getMultiMerged(packages, 'libs', lFlags, false, false));
-
-		return { flags, files };
-	}
-
-	async staticLibs(moduleList: string[]): Promise<PkgResult> {
-		const globalState = new GlobalState();
-		const { packages, files } = await this.loadPackages(
-			moduleList,
-			globalState,
-		);
-		const flags: string[] = [];
-
-		flags.push(
-			...this.getMultiMerged(
-				packages,
-				'privateLibs',
-				FlagType.LIBS_L,
-				true,
-				true,
-			),
-		);
-
-		const lFlags = FlagType.LIBS_OTHER | FlagType.LIBS_l;
-		flags.push(
-			...this.getMultiMerged(packages, 'privateLibs', lFlags, false, true),
-		);
-
-		return { flags, files };
 	}
 
 	private getMultiMerged(

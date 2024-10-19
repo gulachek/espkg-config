@@ -1,1 +1,1 @@
-export { PkgConfig, PkgResult } from './PkgConfig';
+export { PkgConfig, PkgResult, PkgOptions } from './PkgConfig';
