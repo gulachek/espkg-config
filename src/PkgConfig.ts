@@ -354,7 +354,9 @@ class Package {
 		const op = match[2];
 		const rest = match[3];
 
-		const ignorePrivateReqs = this.globalState.deref()?.ignorePrivateReqs;
+		const globalState = this.globalState.deref();
+		let ignorePrivateReqs = false;
+		if (globalState) ignorePrivateReqs = globalState.ignorePrivateReqs;
 
 		if (op === ':') {
 			switch (tag) {
@@ -584,7 +586,9 @@ class Package {
 	}
 
 	private getVar(varName: string): string | undefined {
-		const varval = this.globalState.deref()?.getVar(varName);
+		const globalState = this.globalState.deref();
+		let varval = '';
+		if (globalState) varval = globalState.getVar(varName);
 
 		// no feature to override variables. can be requested
 
