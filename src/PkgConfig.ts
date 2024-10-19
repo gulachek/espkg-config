@@ -21,8 +21,8 @@ export class PkgConfig {
 
 	private async loadPackages(
 		moduleList: string[],
+		globalState: GlobalState,
 	): Promise<{ packages: Package[]; files: string[] }> {
-		const globalState = new GlobalState();
 		const packages: Package[] = [];
 		const reqs = moduleList.map((m) => RequiredVersion.fromUserArg(m));
 
@@ -46,7 +46,11 @@ export class PkgConfig {
 	}
 
 	async cflags(moduleList: string[]): Promise<PkgResult> {
-		const { packages, files } = await this.loadPackages(moduleList);
+		const globalState = new GlobalState();
+		const { packages, files } = await this.loadPackages(
+			moduleList,
+			globalState,
+		);
 		const flags: string[] = [];
 
 		flags.push(
@@ -66,7 +70,12 @@ export class PkgConfig {
 	}
 
 	async libs(moduleList: string[]): Promise<PkgResult> {
-		const { packages, files } = await this.loadPackages(moduleList);
+		const globalState = new GlobalState();
+		globalState.ignorePrivateReqs = true;
+		const { packages, files } = await this.loadPackages(
+			moduleList,
+			globalState,
+		);
 		const flags: string[] = [];
 
 		flags.push(
@@ -80,7 +89,11 @@ export class PkgConfig {
 	}
 
 	async staticLibs(moduleList: string[]): Promise<PkgResult> {
-		const { packages, files } = await this.loadPackages(moduleList);
+		const globalState = new GlobalState();
+		const { packages, files } = await this.loadPackages(
+			moduleList,
+			globalState,
+		);
 		const flags: string[] = [];
 
 		flags.push(
@@ -114,7 +127,7 @@ export class PkgConfig {
 
 		// fill_list
 		for (let i = packages.length - 1; i >= 0; --i) {
-			this.recursiveFillList(packages[i], includePrivate, visited, expanded);
+			recursiveFillList(packages[i], includePrivate, visited, expanded);
 		}
 
 		if (inPathOrder) {
@@ -141,24 +154,6 @@ export class PkgConfig {
 		}
 
 		return out;
-	}
-
-	private recursiveFillList(
-		pkg: Package,
-		includePrivate: boolean,
-		visited: Set<string>,
-		expanded: Package[],
-	): void {
-		if (visited.has(pkg.key)) return;
-
-		visited.add(pkg.key);
-
-		const reqs = includePrivate ? pkg.requiresPrivate : pkg.requires;
-		for (let i = reqs.length - 1; i >= 0; --i) {
-			this.recursiveFillList(reqs[i], includePrivate, visited, expanded);
-		}
-
-		expanded.unshift(pkg);
 	}
 
 	private async getPackage(opts: {
@@ -296,6 +291,7 @@ class Package {
 	private globalState: WeakRef<GlobalState>;
 	public requiresEntries: RequiredVersion[] = [];
 	public requiresPrivateEntries: RequiredVersion[] = [];
+	public conflicts: RequiredVersion[] = [];
 	public requiredVersions = new Map<string, RequiredVersion>();
 	public requires: Package[] = [];
 	public requiresPrivate: Package[] = [];
@@ -331,6 +327,20 @@ class Package {
 				}
 			}
 		}
+
+		const visited = new Set<string>();
+		const transitiveRequires: Package[] = [];
+		recursiveFillList(this, true, visited, transitiveRequires);
+
+		for (const req of transitiveRequires) {
+			for (const ver of this.conflicts) {
+				if (ver.name === req.key && ver.test(req.version)) {
+					throw new Error(
+						`Version '${req.version}' of ${req.key} creates a conflict. (${ver.toString()} conflicts with ${this.key} '${this.version}')`,
+					);
+				}
+			}
+		}
 	}
 
 	public parseLine(untrimmed: string, path: string): void {
@@ -343,6 +353,8 @@ class Package {
 		const tag = match[1];
 		const op = match[2];
 		const rest = match[3];
+
+		const ignorePrivateReqs = this.globalState.deref()?.ignorePrivateReqs;
 
 		if (op === ':') {
 			switch (tag) {
@@ -370,7 +382,7 @@ class Package {
 					this.description = this.trimAndSub(rest, path);
 					break;
 				case 'Requires.private':
-					this.parseRequiresPrivate(rest, path);
+					ignorePrivateReqs || this.parseRequiresPrivate(rest, path);
 					break;
 				case 'Requires':
 					this.parseRequires(rest, path);
@@ -386,7 +398,7 @@ class Package {
 					this.parseCflags(rest, path);
 					break;
 				case 'Conflicts':
-					// TODO
+					this.parseConflicts(rest, path);
 					break;
 				case 'URL':
 					if (typeof this.url === 'string') {
@@ -527,6 +539,13 @@ class Package {
 
 		const trimmed = this.trimAndSub(str, path);
 		this.requiresPrivateEntries = parseModuleList(trimmed, path);
+	}
+
+	private parseConflicts(str: string, path: string): void {
+		// TODO handle dup Conflicts field
+
+		const trimmed = this.trimAndSub(str, path);
+		this.conflicts = parseModuleList(trimmed, path);
 	}
 
 	private trimAndSub(str: string, path: string): string {
@@ -1065,6 +1084,7 @@ export class RequiredVersion {
 class GlobalState {
 	private packages = new Map<string, Package>();
 	private vars = new Map<string, string>();
+	public ignorePrivateReqs = false;
 
 	constructor() {
 		const pkgKey = 'pkg-config';
@@ -1097,4 +1117,22 @@ class GlobalState {
 
 		return files;
 	}
+}
+
+function recursiveFillList(
+	pkg: Package,
+	includePrivate: boolean,
+	visited: Set<string>,
+	expanded: Package[],
+): void {
+	if (visited.has(pkg.key)) return;
+
+	visited.add(pkg.key);
+
+	const reqs = includePrivate ? pkg.requiresPrivate : pkg.requires;
+	for (let i = reqs.length - 1; i >= 0; --i) {
+		recursiveFillList(reqs[i], includePrivate, visited, expanded);
+	}
+
+	expanded.unshift(pkg);
 }

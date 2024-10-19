@@ -548,6 +548,70 @@ describe('pkg-config', () => {
 				/Unknown version comparison operator '==' after package name 'cflags-abc' in file '.*bad-req-op.pc'/,
 			);
 		});
+
+		it('Fails if a transitive dependency conflicts with the package', async () => {
+			await using t = await DynamicTest.init();
+
+			await t.writePc('conflicts-foo', {
+				name: 'Conflicts-Foo',
+				version: 'a.b.c',
+				conflicts: 'foo >= 1.2.3',
+				requires: 'bar',
+			});
+
+			await t.writePc('bar', {
+				requiresPrivate: 'foo',
+			});
+
+			await t.writePc('foo', {
+				name: 'Foo',
+				version: '1.2.4',
+			});
+
+			await expectFailure(
+				['conflicts-foo'],
+				/Version '?1.2.4'? of foo creates a conflict.\s+\(foo >= 1.2.3 conflicts with conflicts-foo '?a.b.c'?\)/,
+			);
+		});
+
+		it('succeeds if transitive dependency does not conflict', async () => {
+			await using t = await DynamicTest.init();
+
+			await t.writePc('conflicts-foo', {
+				name: 'Conflicts-Foo',
+				version: 'a.b.c',
+				conflicts: 'foo >= 1.2.3',
+				requires: 'bar',
+			});
+
+			await t.writePc('bar', {
+				requiresPrivate: 'foo',
+			});
+
+			await t.writePc('foo', {
+				name: 'Foo',
+				version: '1.2.2',
+				cflags: '-Dfoo',
+			});
+
+			await expectCflags(['conflicts-foo'], ['-Dfoo']);
+		});
+
+		it('does not check for conflicts pulled outside packages transitive tree', async () => {
+			await using t = await DynamicTest.init();
+
+			await t.writePc('parent', {
+				version: '1',
+				requires: 'conflicts-parent',
+			});
+
+			await t.writePc('conflicts-parent', {
+				conflicts: 'parent',
+				cflags: '-Dconflicts-parent',
+			});
+
+			await expectCflags(['parent'], ['-Dconflicts-parent']);
+		});
 	});
 
 	describe('libs', () => {
@@ -674,8 +738,55 @@ describe('pkg-config', () => {
 			const f = new Set(files);
 			expect(f.has(resolve('test/req-pubpriv.pc'))).to.be.true;
 			expect(f.has(resolve('test/public.pc'))).to.be.true;
-			expect(f.has(resolve('test/private.pc'))).to.be.true;
-			expect(f.size).to.equal(3);
+			expect(f.size).to.equal(2);
+		});
+
+		it('Fails if a transitive dependency conflicts with the package', async () => {
+			await using t = await DynamicTest.init();
+
+			await t.writePc('conflicts-foo', {
+				name: 'Conflicts-Foo',
+				version: 'a.b.c',
+				conflicts: 'foo >= 1.2.3',
+				requires: 'bar',
+			});
+
+			await t.writePc('bar', {
+				requires: 'foo',
+			});
+
+			await t.writePc('foo', {
+				name: 'Foo',
+				version: '1.2.4',
+			});
+
+			await expectFailure(
+				['conflicts-foo'],
+				/Version '?1.2.4'? of foo creates a conflict.\s+\(foo >= 1.2.3 conflicts with conflicts-foo '?a.b.c'?\)/,
+			);
+		});
+
+		it('Succeeds if conflict is only pulled via Requires.private', async () => {
+			await using t = await DynamicTest.init();
+
+			await t.writePc('conflicts-foo', {
+				name: 'Conflicts-Foo',
+				version: 'a.b.c',
+				conflicts: 'foo >= 1.2.3',
+				requires: 'bar',
+				libs: '-lconflicts-foo',
+			});
+
+			await t.writePc('bar', {
+				requiresPrivate: 'foo',
+			});
+
+			await t.writePc('foo', {
+				name: 'Foo',
+				version: '1.2.4',
+			});
+
+			await expectLibs(['conflicts-foo'], ['-lconflicts-foo']);
 		});
 	});
 
@@ -790,6 +901,31 @@ describe('pkg-config', () => {
 			expect(f.has(resolve('test/public.pc'))).to.be.true;
 			expect(f.has(resolve('test/private.pc'))).to.be.true;
 			expect(f.size).to.equal(3);
+		});
+
+		it('Fails if a transitive dependency conflicts with the package', async () => {
+			await using t = await DynamicTest.init();
+
+			await t.writePc('conflicts-foo', {
+				name: 'Conflicts-Foo',
+				version: 'a.b.c',
+				conflicts: 'foo >= 1.2.3',
+				requires: 'bar',
+			});
+
+			await t.writePc('bar', {
+				requiresPrivate: 'foo',
+			});
+
+			await t.writePc('foo', {
+				name: 'Foo',
+				version: '1.2.4',
+			});
+
+			await expectFailure(
+				['conflicts-foo'],
+				/Version '?1.2.4'? of foo creates a conflict.\s+\(foo >= 1.2.3 conflicts with conflicts-foo '?a.b.c'?\)/,
+			);
 		});
 	});
 });
@@ -925,4 +1061,40 @@ class DynamicTest implements AsyncDisposable {
 	public async [Symbol.asyncDispose](): Promise<void> {
 		await rm(this.d, { recursive: true });
 	}
+
+	public writePc(name: string, opts: PcOpts): Promise<void> {
+		const path = join(this.d, `${name}.pc`);
+		const lines: string[] = [
+			`Name: ${opts.name || ''}`,
+			`Version: ${opts.version || ''}`,
+			`Description: ${opts.description || ''}`,
+		];
+
+		if (opts.conflicts) lines.push(`Conflicts: ${opts.conflicts}`);
+		if (opts.requires) lines.push(`Requires: ${opts.requires}`);
+		if (opts.requiresPrivate)
+			lines.push(`Requires.private: ${opts.requiresPrivate}`);
+		if (opts.cflags) lines.push(`Cflags: ${opts.cflags}`);
+		if (opts.url) lines.push(`URL: ${opts.url}`);
+		if (opts.libs) lines.push(`Libs: ${opts.libs}`);
+		if (opts.libsPrivate) lines.push(`Libs.private: ${opts.libsPrivate}`);
+
+		if (opts.lines) lines.push(...opts.lines);
+
+		return writeFile(path, lines.join('\n'), 'utf8');
+	}
+}
+
+interface PcOpts {
+	name?: string;
+	version?: string;
+	description?: string;
+	conflicts?: string;
+	requires?: string;
+	requiresPrivate?: string;
+	cflags?: string;
+	url?: string;
+	libs?: string;
+	libsPrivate?: string;
+	lines?: string[];
 }
