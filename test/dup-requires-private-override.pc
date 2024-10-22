@@ -1,0 +1,6 @@
+Name:
+Description:
+Version:
+
+Requires.private: bad-dup-name
+Requires.private: cflags-abc

@@ -1,0 +1,6 @@
+Name:
+Description:
+Version:
+
+Requires: bad-dup-name
+Requires: cflags-abc

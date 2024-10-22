@@ -549,6 +549,32 @@ describe('pkg-config', () => {
 			);
 		});
 
+		it('Overrides previous Requires field with subsequent Requires field', async () => {
+			await expectCflags(['dup-requires-override'], ['-a', '-b', '-c']);
+		});
+
+		it('Overrides previous Requires.private field with subsequent Requires.private field', async () => {
+			await expectCflags(['dup-requires-private-override'], ['-a', '-b', '-c']);
+		});
+
+		it('Fails if duplicate Conflicts field is found', async () => {
+			await expectFailure(
+				['bad-dup-conflicts'],
+				/Conflicts field occurs (twice|multiple times) in '.*bad-dup-conflicts.pc'/,
+			);
+		});
+
+		it('Allows duplicate Conflicts fields as long as the prior ones were empty', async () => {
+			await expectCflags(['dup-empty-conflicts-ok'], ['-Dok']);
+		});
+
+		it('Fails if subsequent empty Conflicts field is discovered after nonempty', async () => {
+			await expectFailure(
+				['bad-dup-empty-conflicts'],
+				/Conflicts field occurs (twice|multiple times) in '.*bad-dup-empty-conflicts.pc'/,
+			);
+		});
+
 		it('Fails if a transitive dependency conflicts with the package', async () => {
 			await using t = await DynamicTest.init();
 

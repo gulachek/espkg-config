@@ -1,0 +1,10 @@
+Name:
+Version:
+Description:
+
+Conflicts:
+Conflicts:     	
+Conflicts:
+Conflicts: cflags-abc
+
+Cflags: -Dok

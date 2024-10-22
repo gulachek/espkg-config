@@ -1,0 +1,6 @@
+Name:
+Version:
+Description:
+
+Conflicts: cflags-abc
+Conflicts:

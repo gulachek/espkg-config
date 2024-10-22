@@ -562,21 +562,25 @@ class Package {
 	}
 
 	private parseRequires(str: string, path: string): void {
-		// TODO handle dup Requires field
-
+		// pkg-config BUG: reference implementation only sets requires_entries while
+		// parsing, but checks the requires object, which will never exist until
+		// after being done parsing. So it overrides Requires instead of errors
 		const trimmed = this.trimAndSub(str, path);
 		this.requiresEntries = parseModuleList(trimmed, path);
 	}
 
 	private parseRequiresPrivate(str: string, path: string): void {
-		// TODO handle dup Requires.private field
-
+		// pkg-config BUG: reference implementation only sets requires_private_entries while
+		// parsing, but checks the requires_private object, which will never exist until
+		// after being done parsing. So it overrides Requires.private instead of errors
 		const trimmed = this.trimAndSub(str, path);
 		this.requiresPrivateEntries = parseModuleList(trimmed, path);
 	}
 
 	private parseConflicts(str: string, path: string): void {
-		// TODO handle dup Conflicts field
+		if (this.conflicts.length > 0) {
+			throw new Error(`Conflicts field occurs multiple times in '${path}'`);
+		}
 
 		const trimmed = this.trimAndSub(str, path);
 		this.conflicts = parseModuleList(trimmed, path);
