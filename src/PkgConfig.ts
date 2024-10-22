@@ -376,7 +376,6 @@ class Package {
 	}
 
 	public parseLine(untrimmed: string, path: string): void {
-		// TODO check how trim_string & trim compare
 		const str = untrimmed.trim();
 
 		const match = str.match(/^([A-Za-z0-9_.]+)\s*([:=])\s*(.*)$/);

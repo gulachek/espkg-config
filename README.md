@@ -21,6 +21,25 @@ pkg-config --libs --static <mod1> <mod2> ...
 
 The `PKG_CONFIG_PATH` search path configuration is supported via `searchPaths`.
 
+## Limitations
+
+### Encoding
+
+One fundamental difference between pkg-config and this package is that the `.pc`
+files are parsed as ASCII in pkg-config and as UTF-8 in this package. This is
+not expected to be an issue for users. If a `.pc` file has non-ASCII characters
+and is relying on the default behavior of pkg-config to treat it as ASCII, then
+the behavior is undefined in this package. If this is important and disruptive,
+a user may file an issue documenting the use case.
+
+One consequence from the above is that some string operations like trimming strings
+may behave differently between the implementations, since the unicode-aware
+implementation of this package may split or trim non-ASCII whitespace characters
+differently than the canonical pkg-config implementation. Again, this is not
+anticipated to be disruptive for normal usage of pkg-config.
+
+### `pkg-config` Features
+
 This implementation makes no attempt to remove -I flags that might include
 directories known to gcc or msvc (like `CPATH`, `C_INCLUDE_PATH`, etc). This is
 equivalent to having the `PKG_CONFIG_ALLOW_SYSTEM_CFLAGS` environment variable
