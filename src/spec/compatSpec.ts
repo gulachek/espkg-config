@@ -332,7 +332,6 @@ describe('pkg-config', () => {
 			});
 		});
 
-		// TODO is this breaking change? Is it ok to not go through shell eval? Expansion etc
 		it('handles many escape chars in pkg file', async () => {
 			await expectCflags(
 				['cflags-shell-esc'],

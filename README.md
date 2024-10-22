@@ -38,6 +38,21 @@ implementation of this package may split or trim non-ASCII whitespace characters
 differently than the canonical pkg-config implementation. Again, this is not
 anticipated to be disruptive for normal usage of pkg-config.
 
+### Shell Expansion
+
+`pkg-config` is typically used in a `Makefile` which will capture the output of
+the program in a variable like `FOO_CFLAGS := $(shell pkg-config --cflags foo)`
+and then pass this variable to a shell program to expand and split the words
+for a compiler invocation like `$(CC) $(CFLAGS) $(FOO_CFLAGS) ...`.
+
+This package does not implement a POSIX-compatible shell or assume the
+user has one installed (Windows😥). This means that if a loaded `.pc` file
+has shell-specific features like expanding `~` or variable expansions,
+then those will not work. The author does not anticipate this to be disruptive.
+It would be a rather large undertaking to implement the components of a shell
+necessary to evaluate this type of input, but it _could_ be done, so if this is
+very important for a compelling use case, then an issue should be documented.
+
 ### `pkg-config` Features
 
 This implementation makes no attempt to remove -I flags that might include
