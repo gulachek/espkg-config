@@ -6,7 +6,8 @@
 	"exports": "./dist/index.js",
 	"scripts": {
 		"test": "mocha",
-		"coverage": "nyc mocha"
+		"coverage": "nyc mocha",
+		"prepack": "git archive HEAD -o source.tgz"
 	},
 	"author": "Nicholas Gulachek",
 	"license": "GPL-2.0-or-later",
