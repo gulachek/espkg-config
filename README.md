@@ -5,9 +5,21 @@ This package is intended to be a JavaScript utility for parsing `pkg-config`
 
 ## License
 
-This software is heavily inspired by the implementation of `pkg-config`. Beware
-this has a GPL license, so for proprietary software, it's only appropriate to
-use as a build tool (and not shipped with your distribution).
+`espkg-config` is a derivative work of `pkg-config` and `glib`, licensed under
+the GNU GLPv2. This work directly translated several code fragments to
+TypeScript to be run in a Node.js environment.
+
+In being a derivative work, `espkg-config` is also licensed under GNU GPLv2.
+Please refer to the `COPYING` file in this distribution to understand your rights
+to use, modify, copy, and distribute this software.
+
+## Reference `pkg-config` Source
+
+You can find the source code for `pkg-config` and `glib` on
+[gitlab](https://gitlab.freedesktop.org/pkg-config/pkg-config.git). Please
+note that the version of `glib` that was ported was the bundled source in the
+linked `pkg-config` repo. The specific commit from the `pkg-config` repo that
+was forked was `d97db4fae4c1cd099b506970b285dc2afd818ea2` on version `0.29.2`.
 
 ## Features
 

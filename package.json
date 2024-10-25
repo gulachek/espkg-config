@@ -9,7 +9,7 @@
 		"coverage": "nyc mocha"
 	},
 	"author": "Nicholas Gulachek",
-	"license": "GPL-3.0-or-later",
+	"license": "GPL-2.0-or-later",
 	"devDependencies": {
 		"@istanbuljs/nyc-config-typescript": "^1.0.2",
 		"@types/chai": "^4.3.20",

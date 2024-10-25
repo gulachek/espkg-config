@@ -1,7 +1,6 @@
 .*
 pkg-config
 test
-src
 coverage
 project.vim
 tsconfig.json
