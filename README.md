@@ -1,7 +1,7 @@
 # espkg-config
 
 This package is intended to be a JavaScript utility for parsing `pkg-config`
-`.pc` files.
+`.pc` files, based on the program from [freedesktop.org](https://www.freedesktop.org/wiki/Software/pkg-config/).
 
 ## License
 
