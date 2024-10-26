@@ -7,3 +7,4 @@ coverage
 .nyc_output
 source.tgz
 espkg-config-*.tgz
+pkg-config-0.29.2

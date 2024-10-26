@@ -71,4 +71,3 @@ describe('rpmVerCmp', () => {
 		eq('123abc', '0000123abc');
 	});
 });
-
