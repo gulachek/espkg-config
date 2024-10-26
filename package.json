@@ -4,10 +4,11 @@
 	"description": "Parse pkg-config files in JavaScript",
 	"type": "commonjs",
 	"exports": "./dist/index.js",
+	"types": "./types/index.d.ts",
 	"scripts": {
 		"test": "mocha",
 		"coverage": "nyc mocha",
-		"prepack": "git archive HEAD -o source.tgz"
+		"prepack": "git archive HEAD -o source.tgz && npx esbuild src/index.ts --bundle --minify --platform=node --outfile=dist/index.js"
 	},
 	"author": "Nicholas Gulachek",
 	"license": "GPL-2.0-or-later",
@@ -18,6 +19,7 @@
 		"@types/node": "^22.7.0",
 		"@typescript-eslint/eslint-plugin": "^7.18.0",
 		"chai": "^4.5.0",
+		"esbuild": "^0.24.0",
 		"eslint": "^8.57.1",
 		"eslint-plugin-mocha": "^10.5.0",
 		"eslint-plugin-node": "^11.1.0",
