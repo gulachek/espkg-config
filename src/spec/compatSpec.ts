@@ -960,7 +960,7 @@ class PkgExe {
 	searchPaths: string[] = [];
 
 	constructor() {
-		this.exe = resolve('pkg-config/pkg-config');
+		this.exe = resolve('pkg-config-0.29.2/pkg-config');
 	}
 
 	private async spawn(args: string[]): Promise<string> {
