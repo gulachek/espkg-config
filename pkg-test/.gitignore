@@ -1,0 +1,5 @@
+pkgconfig
+bin
+lib
+node_modules
+package*.json

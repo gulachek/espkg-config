@@ -3,7 +3,7 @@ name: Push Tests
 on: [push]
 
 jobs:
-  build:
+  test-code:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,3 +21,19 @@ jobs:
         run: npx prettier -c .
       - name: Run Tests
         run: npm run test
+  test-apple-clang:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - run: npm ci
+      - run: npm pack
+      - name: Test Building with Apple Clang
+        run: |
+          cd pkg-test
+          npm init -y
+          npm i ../espkg-config-*.tgz
+          ./test-clang.sh
