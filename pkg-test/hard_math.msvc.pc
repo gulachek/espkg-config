@@ -1,0 +1,6 @@
+Name: Hard Math
+Description: Test library that does hard math functions
+Version: 1.2.3
+
+Cflags: /Iinclude
+Libs: /LIBPATH:".\lib" hard_math.lib
