@@ -1,4 +1,8 @@
 #include <hard_math.h>
 #include <stdio.h>
 
-int main() { return !(add_one(10) == 11); }
+int main() {
+	int n = add_one(10);
+	printf("add_one(10) = %d\n", n);
+	return !(n == 11);
+}

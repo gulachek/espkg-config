@@ -53,3 +53,28 @@ jobs:
           npm init -y
           npm i ../espkg-config-*.tgz
           ./test-gcc.sh
+  test-msvc:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - run: npm ci
+      - run: npm pack
+      - name: Install espkg-config in pkg-test
+        shell: bash
+        run: |
+          cd pkg-test
+          npm init -y
+          npm i ../espkg-config-*.tgz
+      - name: Test Building with MSVC
+        shell: cmd
+        run: |
+          set -e
+          cd pkg-test
+          "%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe" -property resolvedInstallationPath > vsdir.txt
+          set /p VS=<vsdir.txt
+          call "%VS%\\VC\\Auxiliary\\Build\\vcvars64.bat"
+          call .\test-msvc.bat

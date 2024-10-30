@@ -8,3 +8,4 @@ coverage
 source.tgz
 espkg-config-*.tgz
 pkg-config-0.29.2
+.vs
