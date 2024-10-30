@@ -37,3 +37,19 @@ jobs:
           npm init -y
           npm i ../espkg-config-*.tgz
           ./test-clang.sh
+  test-gcc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - run: npm ci
+      - run: npm pack
+      - name: Test Building with GCC
+        run: |
+          cd pkg-test
+          npm init -y
+          npm i ../espkg-config-*.tgz
+          ./test-gcc.sh
