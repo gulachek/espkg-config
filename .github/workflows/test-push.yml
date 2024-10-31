@@ -78,3 +78,21 @@ jobs:
           set /p VS=<vsdir.txt
           call "%VS%\\VC\\Auxiliary\\Build\\vcvars64.bat"
           call .\test-msvc.bat
+  test-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - run: npm ci
+      - run: npm pack
+      - run: rm -rf types dist
+      - name: Validate Types are Available
+        run: |
+          cd pkg-test
+          npm init -y
+          npm i ../espkg-config-*.tgz
+          npm i -D typescript
+          npx tsc validateTypes.ts

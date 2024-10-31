@@ -8,7 +8,9 @@
 	"scripts": {
 		"test": "mocha",
 		"coverage": "nyc mocha",
-		"prepack": "git archive HEAD -o source.tgz && npx esbuild src/index.ts --bundle --minify --platform=node --outfile=dist/index.js"
+		"archive-src": "git archive HEAD -o source.tgz",
+		"bundle": "esbuild src/index.ts --bundle --minify --platform=node --outfile=dist/index.js",
+		"prepack": "npm run archive-src && npm run bundle && tsc"
 	},
 	"author": "Nicholas Gulachek",
 	"license": "GPL-2.0-or-later",
@@ -27,6 +29,7 @@
 		"nyc": "^17.1.0",
 		"prettier": "^3.3.3",
 		"source-map-support": "^0.5.21",
-		"ts-node": "^10.9.2"
+		"ts-node": "^10.9.2",
+		"typescript": "5.5.x"
 	}
 }

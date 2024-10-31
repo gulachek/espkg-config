@@ -1,7 +1,11 @@
 .*
-pkg-config
+pkg-config-*
+pkg-test
+espkg-config-*.tgz
 test
 coverage
 project.vim
 tsconfig.json
 types/spec
+src
+*.sh
