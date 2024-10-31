@@ -3,3 +3,4 @@ bin
 lib
 node_modules
 package*.json
+validateTypes.js
