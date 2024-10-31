@@ -98,7 +98,7 @@ these functions can be used.
 
 ```javascript
 async function example() {
-	const { files } = pkg.cflags(['foo', 'bar']);
+	const { files } = await pkg.cflags(['foo', 'bar']);
 	// files: ['/path/to/foo.pc', '/path/to/bar.pc', '/path/to/dep.pc']
 }
 ```
