@@ -4,7 +4,7 @@
 	"description": "Parse pkg-config files in JavaScript",
 	"repository": "github:gulachek/espkg-config",
 	"type": "commonjs",
-	"exports": "./dist/index.js",
+	"main": "./dist/index.js",
 	"types": "./types/index.d.ts",
 	"scripts": {
 		"test": "mocha",
