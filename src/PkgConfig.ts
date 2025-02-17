@@ -41,6 +41,12 @@ export type PkgOptions = {
 	searchPaths: string[];
 };
 
+/** Options to pass to PkgConfig libs function */
+export type LibsOptions = {
+	/** Whether to link to library statically or not. Default false */
+	static?: boolean;
+};
+
 /**
  * Top level object representing the pkg-config implementation
  */
@@ -86,10 +92,18 @@ export class PkgConfig {
 	/**
 	 * Compute linker flags for the given list of modules
 	 * @param moduleList The names of modules to compute flags for
+	 * @param opts See LibsOptions for description
 	 * @returns The flags necessary to link against the given modules
 	 * @remarks The moduleList argument can accept versioned modules like 'foo = 1.2.3'
 	 */
-	public async libs(moduleList: string[]): Promise<PkgResult> {
+	public async libs(
+		moduleList: string[],
+		opts?: LibsOptions,
+	): Promise<PkgResult> {
+		if (opts && opts.static) {
+			return this._staticLibs(moduleList);
+		}
+
 		const globalState = new GlobalState();
 		globalState.ignorePrivateReqs = true;
 		const { packages, files } = await this.loadPackages(
@@ -114,7 +128,7 @@ export class PkgConfig {
 	 * @returns The flags necessary to statically link against the given modules
 	 * @remarks The moduleList argument can accept versioned modules like 'foo = 1.2.3'
 	 */
-	public async staticLibs(moduleList: string[]): Promise<PkgResult> {
+	private async _staticLibs(moduleList: string[]): Promise<PkgResult> {
 		const globalState = new GlobalState();
 		const { packages, files } = await this.loadPackages(
 			moduleList,

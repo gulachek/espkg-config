@@ -7,7 +7,7 @@ async function build() {
 	const { flags: cflags } = await pkg.cflags(['hard_math']);
 	spawnSync('cl.exe', [...cflags, '/c', 'main.c', '/Fo.\\bin\\main.obj'], { stdio: 'inherit' });
 
-	const { flags: libs } = await pkg.staticLibs(['hard_math']);
+	const { flags: libs } = await pkg.libs(['hard_math'], { static: true });
 	spawnSync('link.exe', ['.\\bin\\main.obj', '/OUT:.\\bin\\main.exe', ...libs], { stdio: 'inherit' });
 }
 
