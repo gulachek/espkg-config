@@ -9,3 +9,4 @@ tsconfig.json
 types/spec
 src
 *.sh
+validateReleaseTag.cjs
