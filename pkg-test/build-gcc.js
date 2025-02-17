@@ -7,7 +7,7 @@ async function build() {
 	const { flags: cflags } = await pkg.cflags(['hard_math']);
 	spawnSync('gcc', [...cflags, '-c', 'main.c', '-o', 'bin/main.o'], { stdio: 'inherit' });
 
-	const { flags: libs } = await pkg.staticLibs(['hard_math']);
+	const { flags: libs } = await pkg.libs(['hard_math'], { static: true });
 	spawnSync('gcc', ['bin/main.o', '-o', 'bin/main', ...libs], { stdio: 'inherit' });
 }
 

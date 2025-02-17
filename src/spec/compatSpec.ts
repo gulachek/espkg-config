@@ -12,7 +12,7 @@ describe('pkg-config', () => {
 	let pkg: PkgConfig;
 
 	beforeEach(async () => {
-		const dirs = ['test', 'test/d1', 'test/d2'].map((s) => resolve(s));
+		const dirs = ['test', 'test/d1', 'test/d2'];
 		dirs.push(dynamicTestDir);
 
 		exe = new PkgExe();
@@ -57,7 +57,7 @@ describe('pkg-config', () => {
 		libs: string[],
 	): Promise<void> {
 		const proof = await exe.staticLibs(names);
-		const { flags: actual } = await pkg.staticLibs(names);
+		const { flags: actual } = await pkg.libs(names, { static: true });
 		expect(libs).to.deep.equal(
 			proof,
 			'The given static libs did not match the reference pkg-config behavior',
@@ -308,10 +308,10 @@ describe('pkg-config', () => {
 		});
 
 		it('fails if Cflags ends with backslash as last byte of file', async () => {
-			await expectFailure(['cflags-lingering-backslash'], {
-				ref: /Couldn't parse Cflags[a-z ]+: Text ended just after a “\\”/,
-				self: /Couldn't parse Cflags[a-z ]+: Text ended just after a '\\'/,
-			});
+			await expectFailure(
+				['cflags-lingering-backslash'],
+				/Couldn't parse Cflags[a-z ]+: Text ended just after a ['"]\\['"]/,
+			);
 		});
 
 		it('fails if multiple CFlags fields are present', async () => {
@@ -836,7 +836,7 @@ describe('pkg-config', () => {
 			}
 
 			try {
-				await pkg.staticLibs(names);
+				await pkg.libs(names, { static: true });
 				pkgFail = false;
 			} catch (ex) {
 				expect(ex.message).to.match(
@@ -911,16 +911,16 @@ describe('pkg-config', () => {
 			const pcFile = join(t.d, 'libs-dynamic.pc');
 
 			await writeFile(pcFile, `${preamble}Libs.private: --hello`);
-			let { flags: libs } = await pkg.staticLibs(['libs-dynamic']);
+			let { flags: libs } = await pkg.libs(['libs-dynamic'], { static: true });
 			expect(libs).to.deep.equal(['--hello']);
 
 			await writeFile(pcFile, `${preamble}Libs.private: --world`);
-			libs = (await pkg.staticLibs(['libs-dynamic'])).flags;
+			libs = (await pkg.libs(['libs-dynamic'], { static: true })).flags;
 			expect(libs).to.deep.equal(['--world']);
 		});
 
 		it('returns the files that were loaded', async () => {
-			const { files } = await pkg.staticLibs(['req-pubpriv']);
+			const { files } = await pkg.libs(['req-pubpriv'], { static: true });
 			const f = new Set(files);
 			expect(f.has(resolve('test/req-pubpriv.pc'))).to.be.true;
 			expect(f.has(resolve('test/public.pc'))).to.be.true;

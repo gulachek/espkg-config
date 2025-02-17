@@ -49,8 +49,7 @@ pkg-config --libs --static <mod1> <mod2> ...
 The `PKG_CONFIG_PATH` search path configuration is supported via `searchPaths`
 option when constructing `PkgConfig`.
 
-The supported functions on the `PkgConfig` object are `cflags`, `libs`, and
-`staticLibs`.
+The supported functions on the `PkgConfig` object are `cflags` and `libs`.
 
 Usage is demonstrated in the following example.
 
@@ -72,7 +71,9 @@ async function example() {
 	// libs: ['-L/lib/foo', '-L/lib/bar', '-lfoo', '-lbar']
 
 	// pkg-config --libs --static foo bar
-	const { flags: staticLibs } = await pkg.staticLibs(['foo', 'bar']);
+	const { flags: staticLibs } = await pkg.libs(['foo', 'bar'], {
+		static: true,
+	});
 	// staticLibs: ['-L/lib/foo', '-L/lib/bar', '-L/lib/dependency', '-lfoo', '-lbar', '-ldependency']
 
 	// Flags are parsed to be passed to functions like spawn
@@ -93,8 +94,8 @@ messages, the user's code may break when he updates to another minor/patch versi
 ### Dependency Files
 
 If a user needs to know _which_ `.pc` files were loaded while parsing the given modules
-to `cflags`, `libs`, or `staticLibs`, then the `files` property of the result object of
-these functions can be used.
+to `cflags` or `libs`, then the `files` property of the result object of these
+functions can be used.
 
 ```javascript
 async function example() {
