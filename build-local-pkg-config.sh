@@ -7,4 +7,4 @@ tar xfvz "$PKG.tar.gz" || exit 1
 rm "$PKG.tar.gz"
 
 cd "$PKG"
-./configure CFLAGS="-g" && make
+./configure --with-internal-glib CFLAGS="-g" && make
