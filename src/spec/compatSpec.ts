@@ -308,10 +308,10 @@ describe('pkg-config', () => {
 		});
 
 		it('fails if Cflags ends with backslash as last byte of file', async () => {
-			await expectFailure(['cflags-lingering-backslash'], {
-				ref: /Couldn't parse Cflags[a-z ]+: Text ended just after a “\\”/,
-				self: /Couldn't parse Cflags[a-z ]+: Text ended just after a '\\'/,
-			});
+			await expectFailure(
+				['cflags-lingering-backslash'],
+				/Couldn't parse Cflags[a-z ]+: Text ended just after a ['"]\\['"]/,
+			);
 		});
 
 		it('fails if multiple CFlags fields are present', async () => {
