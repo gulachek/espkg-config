@@ -21,6 +21,7 @@ import { join, basename, dirname } from 'node:path';
 import { gShellParseArgv } from './gShell';
 import { FileStream, isRegularFile } from './files';
 import { CharPtr } from './CharPtr';
+import { resolve } from 'node:path';
 
 /** The pkg-config version we're mimicking */
 const SIMULATED_VERSION = '0.29.2';
@@ -49,7 +50,7 @@ export class PkgConfig {
 
 	/** Construct the PkgConfig object */
 	public constructor(opts: PkgOptions) {
-		this.searchPaths = [...opts.searchPaths];
+		this.searchPaths = [...opts.searchPaths].map((p) => resolve(p));
 	}
 
 	/**

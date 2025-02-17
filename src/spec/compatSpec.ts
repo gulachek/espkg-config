@@ -12,7 +12,7 @@ describe('pkg-config', () => {
 	let pkg: PkgConfig;
 
 	beforeEach(async () => {
-		const dirs = ['test', 'test/d1', 'test/d2'].map((s) => resolve(s));
+		const dirs = ['test', 'test/d1', 'test/d2'];
 		dirs.push(dynamicTestDir);
 
 		exe = new PkgExe();
